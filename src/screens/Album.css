@@ -1,0 +1,524 @@
+.album {
+  padding: var(--space-4);
+  height: 100dvh;
+  max-width: 1280px;
+  width: 100%;
+  margin: 0 auto;
+  gap: var(--space-3);
+}
+
+.album-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.album-header-center {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  min-width: 0;
+}
+
+.album-title {
+  font-size: var(--fs-title);
+  font-weight: 800;
+}
+
+.album-page-counter {
+  color: var(--text-secondary);
+  font-size: var(--fs-small);
+  font-variant-numeric: tabular-nums;
+}
+
+.album-empty {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-secondary);
+  font-size: 1.1rem;
+}
+
+/* ===== Stage — האלבום הפתוח ===== */
+
+.album-stage {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-3);
+}
+
+.album-spread {
+  display: flex;
+  /* גובה מחושב ישירות מהמסך — לא תלוי בשרשרת ה-flex (אחוזים שם קורסים) */
+  height: min(calc(100dvh - 260px), 40vw);
+  min-height: 240px;
+  aspect-ratio: var(--spread-ratio, 2 / 1);
+  max-width: 100%;
+  background: var(--bg-elevated);
+  border-radius: var(--radius-sm);
+  box-shadow:
+    0 24px 60px rgba(0, 0, 0, 0.45),
+    0 4px 12px rgba(0, 0, 0, 0.3);
+  position: relative;
+  overflow: hidden;
+}
+
+.album-spread:has(.album-page:only-child) {
+  --spread-ratio: 1 / 1;
+  height: min(calc(100dvh - 260px), 80vw);
+}
+
+.slide-next {
+  animation: slide-in-next var(--dur-med) var(--ease) both;
+}
+
+.slide-prev {
+  animation: slide-in-prev var(--dur-med) var(--ease) both;
+}
+
+@keyframes slide-in-next {
+  from {
+    opacity: 0;
+    transform: translateX(-28px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes slide-in-prev {
+  from {
+    opacity: 0;
+    transform: translateX(28px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* ===== עמוד בודד ===== */
+
+.album-page {
+  position: relative;
+  flex: 1;
+  aspect-ratio: 1;
+  /* עמוד אלבום = נייר. תמיד בהיר, בכל ערכת נושא — כמו המוצר המודפס */
+  background: #f7f4ee;
+  overflow: hidden;
+}
+
+.album-slot {
+  position: absolute;
+  overflow: hidden;
+  background: #eae6de;
+  box-shadow: 0 1px 3px rgba(60, 50, 30, 0.12);
+}
+
+.album-slot img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  user-select: none;
+}
+
+/* כותרת יום — פס עדין על תחתית תמונת הפותח, שורה אחת תמיד */
+.album-page-day-title {
+  position: absolute;
+  bottom: 0;
+  inset-inline: 0;
+  padding: 9% 5% 4%;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  font-size: clamp(0.75rem, 1.6vw, 1.15rem);
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  color: #fff;
+  text-shadow: 0 1px 8px rgba(0, 0, 0, 0.6);
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.55), transparent);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  z-index: 1;
+}
+
+/* שדרת האלבום בין שני עמודים */
+.album-spine {
+  position: absolute;
+  inset-block: 0;
+  inset-inline-start: 50%;
+  width: 2px;
+  transform: translateX(-50%);
+  background: linear-gradient(
+    to left,
+    transparent,
+    rgba(0, 0, 0, 0.35) 50%,
+    transparent
+  );
+  z-index: 2;
+  pointer-events: none;
+}
+
+/* ===== ניווט ===== */
+
+.album-nav {
+  width: 48px;
+  height: 48px;
+  flex-shrink: 0;
+  border-radius: var(--radius-full);
+  border: 1px solid var(--border-strong);
+  background: var(--bg-card);
+  color: var(--text);
+  font-size: 1.6rem;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding-bottom: 4px;
+  transition: transform var(--dur-fast) var(--ease), background var(--dur-fast) var(--ease);
+}
+
+.album-nav:hover:not(:disabled) {
+  transform: scale(1.1);
+  background: var(--bg-card-hover);
+}
+
+.album-nav:disabled {
+  opacity: 0.25;
+  cursor: default;
+}
+
+/* ===== רצועת עמודים ===== */
+
+.album-strip {
+  display: flex;
+  gap: var(--space-2);
+  overflow-x: auto;
+  padding: var(--space-2) var(--space-1);
+  scrollbar-width: thin;
+}
+
+.album-strip-item {
+  flex-shrink: 0;
+  width: 52px;
+  height: 52px;
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  border: 2px solid transparent;
+  opacity: 0.55;
+  transition: opacity var(--dur-fast) var(--ease), border-color var(--dur-fast) var(--ease),
+    transform var(--dur-fast) var(--ease);
+}
+
+.album-strip-item:hover {
+  opacity: 0.85;
+  transform: translateY(-2px);
+}
+
+.album-strip-active {
+  opacity: 1;
+  border-color: var(--accent);
+}
+
+.album-strip-item img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.album-header-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.album-export-btn {
+  font-size: var(--fs-small);
+  padding: var(--space-2) var(--space-4);
+}
+
+/* ===== Settings panel ===== */
+
+.album-settings-btn {
+  font-size: 1.1rem;
+  padding: var(--space-2) var(--space-3);
+}
+
+.album-settings-panel {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-2);
+  background: var(--bg-card);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-md);
+  padding: var(--space-3) var(--space-4);
+  margin: 0 auto;
+  animation: pop-in var(--dur-fast) var(--ease) both;
+}
+
+.album-settings-title {
+  font-size: var(--fs-tiny);
+  font-weight: 700;
+  color: var(--text-faint);
+}
+
+.album-settings-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--fs-small);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.album-settings-row input[type='number'] {
+  width: 90px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  color: var(--text);
+  font-family: inherit;
+  font-size: var(--fs-small);
+  padding: var(--space-1) var(--space-2);
+  text-align: center;
+}
+
+.album-settings-row input[type='checkbox'] {
+  accent-color: var(--accent);
+  width: 16px;
+  height: 16px;
+}
+
+.album-settings-note {
+  color: var(--text-faint);
+  font-size: var(--fs-tiny);
+}
+
+/* ===== Edit mode ===== */
+
+.album-slot-editable {
+  cursor: pointer;
+  transition: outline-color var(--dur-fast) var(--ease), filter var(--dur-fast) var(--ease);
+  outline: 2px solid transparent;
+  outline-offset: -2px;
+}
+
+.album-slot-editable:hover {
+  filter: brightness(1.1);
+  outline-color: var(--border-strong);
+}
+
+.album-slot-selected {
+  outline: 3px solid var(--accent);
+  outline-offset: -3px;
+  animation: slot-pulse 1.2s ease-in-out infinite;
+}
+
+@keyframes slot-pulse {
+  0%,
+  100% {
+    outline-color: var(--accent);
+  }
+  50% {
+    outline-color: var(--accent-strong);
+  }
+}
+
+.album-slot-remove {
+  position: absolute;
+  top: 6px;
+  inset-inline-end: 6px;
+  width: 26px;
+  height: 26px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-full);
+  background: rgba(15, 17, 23, 0.75);
+  color: #fff;
+  font-size: 0.8rem;
+  font-weight: 700;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  opacity: 0;
+  transition: opacity var(--dur-fast) var(--ease), background var(--dur-fast) var(--ease);
+  z-index: 3;
+}
+
+.album-slot-editable:hover .album-slot-remove {
+  opacity: 1;
+}
+
+.album-slot-remove:hover {
+  background: var(--danger);
+}
+
+/* במסכי מגע אין hover — הכפתור גלוי תמיד במצב עריכה */
+@media (hover: none) {
+  .album-slot-editable .album-slot-remove {
+    opacity: 1;
+  }
+}
+
+.album-edit-bar {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.album-edit-hint {
+  color: var(--text-secondary);
+  font-size: var(--fs-small);
+  text-align: center;
+}
+
+.album-edit-templates {
+  display: flex;
+  gap: var(--space-5);
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.album-template-group {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-1);
+}
+
+.album-template-label {
+  font-size: var(--fs-tiny);
+  font-weight: 700;
+  color: var(--text-faint);
+}
+
+.album-template-row {
+  display: flex;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.template-chip {
+  position: relative;
+  width: 56px;
+  height: 56px;
+  border-radius: var(--radius-sm);
+  background: #f7f4ee;
+  border: 2px solid var(--border);
+  transition: border-color var(--dur-fast) var(--ease), transform var(--dur-fast) var(--ease);
+}
+
+.template-chip:hover {
+  transform: scale(1.1);
+  border-color: var(--border-strong);
+}
+
+.template-chip-active {
+  border-color: var(--accent);
+}
+
+.template-chip-rect {
+  position: absolute;
+  background: #b9b2a4;
+  border-radius: 1px;
+}
+
+.template-chip-active .template-chip-rect {
+  background: var(--accent);
+}
+
+/* ===== Export modal ===== */
+
+.export-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.55);
+  backdrop-filter: blur(4px);
+  animation: fade-in var(--dur-fast) var(--ease) both;
+}
+
+.export-modal {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-3);
+  background: var(--bg-card);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-card);
+  padding: var(--space-6);
+  max-width: 400px;
+  width: calc(100% - var(--space-6));
+  text-align: center;
+  animation: pop-in var(--dur-med) var(--ease) both;
+}
+
+.export-spinner {
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius-full);
+  border: 3px solid var(--accent-soft);
+  border-top-color: var(--accent);
+  animation: spin 0.9s linear infinite;
+}
+
+.export-title {
+  font-size: 1.2rem;
+  font-weight: 700;
+}
+
+.export-progress-text {
+  color: var(--text-secondary);
+  font-size: var(--fs-small);
+  font-variant-numeric: tabular-nums;
+}
+
+.export-progress-bar {
+  width: 100%;
+  height: 6px;
+  background: var(--bg-elevated);
+  border-radius: var(--radius-full);
+  overflow: hidden;
+}
+
+.export-progress-fill {
+  height: 100%;
+  background: var(--gradient-brand);
+  border-radius: var(--radius-full);
+  transition: width var(--dur-fast) var(--ease);
+}
+
+.export-done-emoji {
+  font-size: 2.6rem;
+}
+
+.export-warning {
+  color: var(--text-secondary);
+  font-size: var(--fs-small);
+  line-height: 1.5;
+}
+
+@media (max-width: 760px) {
+  .album {
+    padding: var(--space-3);
+  }
+
+  .album-nav {
+    width: 40px;
+    height: 40px;
+  }
+}

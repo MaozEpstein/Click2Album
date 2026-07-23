@@ -1,0 +1,118 @@
+/* ===== Click2Album Design Tokens =====
+   מקור אמת יחיד לכל ערכי העיצוב. שינוי כאן משפיע על כל האפליקציה. */
+
+:root {
+  /* Colors — dark premium */
+  --bg: #0f1117;
+  --bg-elevated: #161a23;
+  --bg-card: #1c212d;
+  --bg-card-hover: #232937;
+  --border: rgba(255, 255, 255, 0.08);
+  --border-strong: rgba(255, 255, 255, 0.14);
+
+  --text: #f2f4f8;
+  --text-secondary: #a7aebc;
+  --text-faint: #6b7280;
+
+  --accent: #7c6cf6;
+  --accent-strong: #9487ff;
+  --accent-soft: rgba(124, 108, 246, 0.14);
+  --accent-glow: rgba(124, 108, 246, 0.16);
+  --success: #4ade80;
+  --danger: #f87171;
+
+  /* Gradients */
+  --gradient-brand: linear-gradient(135deg, #7c6cf6 0%, #c86cf6 55%, #f66cb1 100%);
+
+  /* Typography */
+  --font-family: 'Heebo', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --fs-hero: clamp(2.2rem, 6vw, 3.4rem);
+  --fs-title: 1.5rem;
+  --fs-body: 1rem;
+  --fs-small: 0.875rem;
+  --fs-tiny: 0.75rem;
+
+  /* Spacing */
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.5rem;
+  --space-6: 2rem;
+  --space-8: 3rem;
+
+  /* Radius */
+  --radius-sm: 8px;
+  --radius-md: 14px;
+  --radius-lg: 22px;
+  --radius-full: 999px;
+
+  /* Shadows */
+  --shadow-card: 0 4px 24px rgba(0, 0, 0, 0.35);
+  --shadow-accent: 0 8px 32px rgba(124, 108, 246, 0.35);
+
+  /* Motion */
+  --ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --dur-fast: 150ms;
+  --dur-med: 300ms;
+  --dur-slow: 550ms;
+}
+
+/* ===== Themes =====
+   כל ערכה דורסת רק צבעים; מבנה, מרווחים ואנימציות משותפים. */
+
+/* אוקיינוס — כהה-כחול עמוק עם טורקיז */
+:root[data-theme='ocean'] {
+  --bg: #0a141d;
+  --bg-elevated: #101d29;
+  --bg-card: #152534;
+  --bg-card-hover: #1b2f41;
+  --accent: #2dd4bf;
+  --accent-strong: #5eead4;
+  --accent-soft: rgba(45, 212, 191, 0.14);
+  --accent-glow: rgba(45, 212, 191, 0.14);
+  --gradient-brand: linear-gradient(135deg, #2dd4bf 0%, #38bdf8 55%, #818cf8 100%);
+  --shadow-accent: 0 8px 32px rgba(45, 212, 191, 0.3);
+}
+
+/* שמנת — בהיר חמים ורך, לא לבן בוהק */
+:root[data-theme='cream'] {
+  color-scheme: light;
+  --bg: #f3efe7;
+  --bg-elevated: #ece6da;
+  --bg-card: #faf7f1;
+  --bg-card-hover: #ffffff;
+  --border: rgba(60, 45, 20, 0.1);
+  --border-strong: rgba(60, 45, 20, 0.18);
+  --text: #2b2418;
+  --text-secondary: #6d6250;
+  --text-faint: #9a8f7c;
+  --accent: #c2703d;
+  --accent-strong: #a85c2e;
+  --accent-soft: rgba(194, 112, 61, 0.14);
+  --accent-glow: rgba(194, 112, 61, 0.12);
+  --gradient-brand: linear-gradient(135deg, #d98d55 0%, #c2703d 55%, #a85450 100%);
+  --shadow-card: 0 4px 20px rgba(90, 70, 40, 0.12);
+  --shadow-accent: 0 8px 28px rgba(194, 112, 61, 0.3);
+}
+
+/* ערפל — בהיר קריר ורגוע בגווני כחול-אפור */
+:root[data-theme='mist'] {
+  color-scheme: light;
+  --bg: #e9edf3;
+  --bg-elevated: #dfe5ee;
+  --bg-card: #f5f7fb;
+  --bg-card-hover: #ffffff;
+  --border: rgba(30, 45, 70, 0.1);
+  --border-strong: rgba(30, 45, 70, 0.18);
+  --text: #1d2532;
+  --text-secondary: #556174;
+  --text-faint: #8b95a8;
+  --accent: #5b74d6;
+  --accent-strong: #4560c4;
+  --accent-soft: rgba(91, 116, 214, 0.14);
+  --accent-glow: rgba(91, 116, 214, 0.12);
+  --gradient-brand: linear-gradient(135deg, #6d87e8 0%, #5b74d6 55%, #8a6fd6 100%);
+  --shadow-card: 0 4px 20px rgba(40, 55, 90, 0.12);
+  --shadow-accent: 0 8px 28px rgba(91, 116, 214, 0.3);
+}

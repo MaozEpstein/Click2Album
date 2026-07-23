@@ -1,0 +1,962 @@
+.swipe {
+  padding: var(--space-4);
+  max-width: 720px;
+  width: 100%;
+  margin: 0 auto;
+  gap: var(--space-3);
+  height: 100dvh;
+}
+
+.swipe-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.swipe-header-info {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  min-width: 0;
+}
+
+.swipe-day-title {
+  font-weight: 700;
+  font-size: var(--fs-body);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.swipe-remaining {
+  color: var(--text-secondary);
+  font-size: var(--fs-small);
+  font-variant-numeric: tabular-nums;
+}
+
+.btn-ghost:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+/* ===== Progress bar ===== */
+
+.swipe-progress {
+  height: 4px;
+  background: var(--bg-card);
+  border-radius: var(--radius-full);
+  overflow: hidden;
+}
+
+.swipe-progress-fill {
+  height: 100%;
+  background: var(--gradient-brand);
+  border-radius: var(--radius-full);
+  transition: width var(--dur-med) var(--ease);
+}
+
+.swipe-budget {
+  color: var(--text-faint);
+  font-size: var(--fs-tiny);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.swipe-budget-over {
+  color: #fb923c;
+}
+
+/* ===== Category chips ===== */
+
+.swipe-categories {
+  display: flex;
+  justify-content: center;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
+
+.swipe-category-chip {
+  font-size: var(--fs-tiny);
+  font-weight: 600;
+  color: var(--text-secondary);
+  padding: var(--space-1) var(--space-3);
+  border-radius: var(--radius-full);
+  border: 1px solid var(--border-strong);
+  transition: background var(--dur-fast) var(--ease), color var(--dur-fast) var(--ease);
+}
+
+.swipe-category-chip:hover {
+  background: var(--bg-card);
+}
+
+.swipe-category-active {
+  background: var(--accent-soft);
+  color: var(--accent-strong);
+  border-color: var(--accent);
+}
+
+.swipe-filter-divider {
+  width: 1px;
+  align-self: stretch;
+  background: var(--border-strong);
+  margin: 0 var(--space-1);
+}
+
+/* ===== Card stage ===== */
+
+.swipe-stage {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.swipe-card {
+  position: absolute;
+  inset: 0;
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-card);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.swipe-card img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  user-select: none;
+  -webkit-user-drag: none;
+}
+
+.swipe-card-back1 {
+  transform: scale(0.94) translateY(14px);
+  opacity: 0.6;
+}
+
+.swipe-card-back2 {
+  transform: scale(0.88) translateY(28px);
+  opacity: 0.3;
+}
+
+.swipe-card-top {
+  cursor: grab;
+  touch-action: none;
+  z-index: 2;
+  will-change: transform;
+}
+
+.swipe-card-top:active {
+  cursor: grabbing;
+}
+
+.swipe-header-side {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+/* חותמת זמן על קלף הסווייפ */
+.swipe-card-timestamp {
+  position: absolute;
+  bottom: var(--space-2);
+  inset-inline-start: 50%;
+  translate: -50% 0;
+  padding: 2px 10px;
+  border-radius: var(--radius-full);
+  font-size: var(--fs-tiny);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  direction: ltr;
+  color: #fff;
+  background: rgba(15, 17, 23, 0.65);
+  backdrop-filter: blur(4px);
+  white-space: nowrap;
+  pointer-events: none;
+  z-index: 2;
+}
+
+/* ===== חיווי החלטה קיימת (מעבר חוזר) ===== */
+
+.swipe-decided-badge {
+  position: absolute;
+  top: var(--space-4);
+  inset-inline-start: 50%;
+  translate: -50% 0;
+  font-size: var(--fs-small);
+  font-weight: 800;
+  padding: var(--space-1) var(--space-4);
+  border-radius: var(--radius-full);
+  border: 2px solid;
+  backdrop-filter: blur(6px);
+  pointer-events: none;
+  z-index: 2;
+}
+
+.decided-keep {
+  color: var(--success);
+  border-color: var(--success);
+  background: rgba(74, 222, 128, 0.15);
+}
+
+.decided-reject {
+  color: var(--danger);
+  border-color: var(--danger);
+  background: rgba(248, 113, 113, 0.15);
+}
+
+.decided-favorite {
+  color: #fbbf24;
+  border-color: #fbbf24;
+  background: rgba(251, 191, 36, 0.15);
+}
+
+/* ===== גלריית היום ===== */
+
+.gallery-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  background: var(--bg);
+  padding: var(--space-4);
+  animation: fade-in var(--dur-fast) var(--ease) both;
+}
+
+.gallery-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+}
+
+.gallery-filters {
+  display: flex;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
+
+.gallery-hint {
+  color: var(--text-faint);
+  font-size: var(--fs-tiny);
+  text-align: center;
+}
+
+.gallery-grid {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: var(--space-2);
+  align-content: start;
+}
+
+.gallery-item {
+  position: relative;
+  width: 100%;
+  padding-bottom: 100%; /* ריבוע יציב שלא תלוי בתוכן */
+  height: 0;
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  border: 2px solid var(--border);
+  transition: transform var(--dur-fast) var(--ease), border-color var(--dur-fast) var(--ease);
+}
+
+.gallery-item:hover {
+  transform: scale(1.03);
+  border-color: var(--border-strong);
+}
+
+.gallery-item img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.gallery-badge {
+  position: absolute;
+  top: var(--space-1);
+  inset-inline-end: var(--space-1);
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-full);
+  font-size: 0.85rem;
+  font-weight: 800;
+  color: #0f1117;
+}
+
+.gallery-badge-keep {
+  background: var(--success);
+}
+
+.gallery-badge-reject {
+  background: var(--danger);
+  color: #fff;
+}
+
+.gallery-badge-favorite {
+  background: #fbbf24;
+}
+
+/* חותמת זמן צילום — תאריך ושעה עד שניות */
+.gallery-timestamp {
+  position: absolute;
+  top: var(--space-1);
+  inset-inline-start: var(--space-1);
+  max-width: calc(100% - 40px);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  padding: 1px 6px;
+  border-radius: var(--radius-sm);
+  font-size: 0.62rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  direction: ltr;
+  color: #fff;
+  background: rgba(0, 0, 0, 0.65);
+  white-space: nowrap;
+}
+
+.gallery-header-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.gallery-select-active {
+  background: var(--accent-soft);
+  color: var(--accent-strong);
+  border-color: var(--accent);
+}
+
+/* כפתורי החלטה מהירים על כל תמונה */
+.gallery-actions {
+  position: absolute;
+  bottom: var(--space-1);
+  inset-inline-start: 50%;
+  translate: -50% 0;
+  display: flex;
+  gap: var(--space-1);
+  opacity: 0.65;
+  transition: opacity var(--dur-fast) var(--ease);
+}
+
+.gallery-item:hover .gallery-actions {
+  opacity: 1;
+}
+
+.gallery-action {
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-full);
+  font-size: 0.8rem;
+  font-weight: 800;
+  background: rgba(15, 17, 23, 0.8);
+  border: 1.5px solid;
+  transition: transform var(--dur-fast) var(--ease);
+}
+
+.gallery-action:hover {
+  transform: scale(1.15);
+}
+
+.gallery-action-keep {
+  color: var(--success);
+  border-color: var(--success);
+}
+
+.gallery-action-fav {
+  color: #fbbf24;
+  border-color: #fbbf24;
+}
+
+.gallery-action-reject {
+  color: var(--danger);
+  border-color: var(--danger);
+}
+
+/* בחירה מרובה */
+.gallery-item-selectable {
+  cursor: pointer;
+}
+
+.gallery-item-selected {
+  outline: 3px solid var(--accent);
+  outline-offset: -3px;
+}
+
+.gallery-select-check {
+  position: absolute;
+  bottom: var(--space-1);
+  inset-inline-end: var(--space-1);
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-full);
+  border: 2px solid rgba(255, 255, 255, 0.7);
+  background: rgba(15, 17, 23, 0.5);
+  color: #fff;
+  font-weight: 800;
+  font-size: 0.85rem;
+}
+
+.gallery-select-check-on {
+  background: var(--accent);
+  border-color: var(--accent);
+}
+
+/* סרגל פעולה קבוצתית */
+.gallery-bulk-bar {
+  position: sticky;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-4);
+  padding: var(--space-3);
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-card);
+  animation: pop-in var(--dur-fast) var(--ease) both;
+}
+
+.gallery-bulk-count {
+  font-size: var(--fs-small);
+  font-weight: 700;
+  color: var(--text-secondary);
+}
+
+.gallery-bulk-btn {
+  width: 46px;
+  height: 46px;
+  font-size: 1.1rem;
+}
+
+/* ===== Lightbox — תצוגה גדולה מהגלריה ===== */
+
+.lightbox {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-3);
+  background: rgba(0, 0, 0, 0.85);
+  backdrop-filter: blur(6px);
+  padding: var(--space-4);
+  animation: fade-in var(--dur-fast) var(--ease) both;
+}
+
+.lightbox-inner {
+  position: relative;
+  max-width: 100%;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.lightbox-inner img {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  border-radius: var(--radius-sm);
+}
+
+.lightbox-nav {
+  position: absolute;
+  top: 50%;
+  translate: 0 -50%;
+  width: 46px;
+  height: 46px;
+  border-radius: var(--radius-full);
+  border: 1px solid var(--border-strong);
+  background: rgba(15, 17, 23, 0.7);
+  color: #fff;
+  font-size: 1.5rem;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding-bottom: 4px;
+  z-index: 2;
+}
+
+.lightbox-nav:hover {
+  background: rgba(15, 17, 23, 0.95);
+}
+
+.lightbox-nav-prev {
+  inset-inline-end: var(--space-3);
+}
+
+.lightbox-nav-next {
+  inset-inline-start: var(--space-3);
+}
+
+.lightbox-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+}
+
+/* זמני — ציון מוצלחוּת על כל תמונה בגלריה (לבחינת המנוע) */
+.gallery-score-badge {
+  position: absolute;
+  top: 26px;
+  inset-inline-end: var(--space-1);
+  padding: 1px 8px;
+  border-radius: var(--radius-sm);
+  font-size: 0.72rem;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  color: #0f1117;
+  background: #86efac;
+}
+
+/* אבחון dev — אשכול זהות (מי האדם בתמונה) */
+.gallery-person-badge {
+  position: absolute;
+  top: 26px;
+  inset-inline-start: var(--space-1);
+  padding: 1px 7px;
+  border-radius: var(--radius-sm);
+  font-size: 0.68rem;
+  font-weight: 800;
+  direction: ltr;
+  color: #0f1117;
+  background: #f0abfc;
+}
+
+/* תג ערימה — תמונות שאוחדו בסווייפ */
+.gallery-stack-badge {
+  position: absolute;
+  bottom: var(--space-1);
+  inset-inline-start: var(--space-1);
+  padding: 1px 8px;
+  border-radius: var(--radius-full);
+  font-size: var(--fs-tiny);
+  font-weight: 800;
+  color: #fff;
+}
+
+/* ===== Stacks ===== */
+
+/* אפקט "דפים" לערימה — שתי מסגרות מוזחות מאחורי הקלף */
+.swipe-card-stacked::before,
+.swipe-card-stacked::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  border: 1px solid var(--border-strong);
+  background: var(--bg-card);
+  z-index: -1;
+}
+
+.swipe-card-stacked::before {
+  transform: rotate(2.5deg) translateY(4px);
+}
+
+.swipe-card-stacked::after {
+  transform: rotate(-2deg) translateY(7px);
+}
+
+.stack-badge {
+  position: absolute;
+  bottom: var(--space-4);
+  inset-inline-start: var(--space-4);
+  font-size: var(--fs-body);
+  font-weight: 800;
+  color: #fff;
+  background: rgba(15, 17, 23, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  padding: var(--space-1) var(--space-3);
+  border-radius: var(--radius-full);
+  backdrop-filter: blur(6px);
+  pointer-events: none;
+}
+
+.stack-expand-btn {
+  position: absolute;
+  bottom: var(--space-4);
+  inset-inline-end: var(--space-4);
+  font-size: var(--fs-small);
+  font-weight: 600;
+  color: #fff;
+  background: rgba(15, 17, 23, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  padding: var(--space-2) var(--space-4);
+  border-radius: var(--radius-full);
+  backdrop-filter: blur(6px);
+  transition: background var(--dur-fast) var(--ease);
+}
+
+.stack-expand-btn:hover {
+  background: rgba(15, 17, 23, 0.9);
+}
+
+/* ===== Stack overlay — בחירה מרובה ===== */
+
+.stack-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-card);
+  padding: var(--space-4);
+  animation: pop-in var(--dur-med) var(--ease) both;
+}
+
+.stack-overlay-hint {
+  color: var(--text-secondary);
+  font-size: var(--fs-small);
+  text-align: center;
+}
+
+.stack-grid {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  align-content: center;
+  gap: var(--space-3);
+}
+
+/* התא מתכווץ לגודל התמונה עצמה — בלי ריבועים ריקים */
+.stack-grid-item {
+  position: relative;
+  /* הרבה תמונות — קטנות יותר כדי שכולן ייראו */
+  height: clamp(120px, 26vh, 300px);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  border: 3px solid var(--border);
+  background: var(--bg);
+  transition: border-color var(--dur-fast) var(--ease), transform var(--dur-fast) var(--ease);
+}
+
+/* עד 4 תמונות — גדולות, כולן נראות במלואן בלי גלילה */
+.stack-grid-few .stack-grid-item {
+  height: clamp(180px, 44vh, 520px);
+}
+
+.stack-grid-item:hover {
+  transform: scale(1.02);
+  border-color: var(--border-strong);
+}
+
+.stack-grid-item img {
+  height: 100%;
+  width: auto;
+  max-width: 82vw;
+  display: block;
+}
+
+.stack-grid-item-selected {
+  border-color: var(--success);
+}
+
+.stack-recommended {
+  position: absolute;
+  top: var(--space-2);
+  inset-inline-start: var(--space-2);
+  padding: 2px 10px;
+  border-radius: var(--radius-full);
+  font-size: var(--fs-tiny);
+  font-weight: 800;
+  color: #0f1117;
+  background: #fbbf24;
+}
+
+.stack-score-debug {
+  position: absolute;
+  bottom: var(--space-1);
+  inset-inline-start: var(--space-1);
+  padding: 1px 7px;
+  border-radius: var(--radius-sm);
+  font-size: 0.7rem;
+  font-weight: 800;
+  color: #fff;
+  background: rgba(0, 0, 0, 0.7);
+}
+
+.stack-grid-check {
+  position: absolute;
+  top: var(--space-2);
+  inset-inline-end: var(--space-2);
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-full);
+  background: var(--success);
+  color: #0f1117;
+  font-weight: 800;
+  font-size: var(--fs-small);
+  opacity: 0;
+  transform: scale(0.6);
+  transition: opacity var(--dur-fast) var(--ease), transform var(--dur-fast) var(--ease);
+}
+
+.stack-grid-item-selected .stack-grid-check {
+  opacity: 1;
+  transform: scale(1);
+}
+
+.stack-overlay-actions {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-3);
+}
+
+/* ===== Drag tags ===== */
+
+.swipe-tag {
+  position: absolute;
+  top: var(--space-4);
+  font-size: 1.3rem;
+  font-weight: 800;
+  padding: var(--space-2) var(--space-4);
+  border-radius: var(--radius-md);
+  border: 3px solid;
+  opacity: 0;
+  pointer-events: none;
+  backdrop-filter: blur(4px);
+}
+
+.swipe-tag-keep {
+  inset-inline-start: var(--space-4);
+  color: var(--success);
+  border-color: var(--success);
+  background: rgba(74, 222, 128, 0.12);
+  transform: rotate(8deg);
+}
+
+.swipe-tag-reject {
+  inset-inline-end: var(--space-4);
+  color: var(--danger);
+  border-color: var(--danger);
+  background: rgba(248, 113, 113, 0.12);
+  transform: rotate(-8deg);
+}
+
+.swipe-tag-fav {
+  inset-inline-start: 50%;
+  translate: -50% 0;
+  color: #fbbf24;
+  border-color: #fbbf24;
+  background: rgba(251, 191, 36, 0.12);
+}
+
+/* זוהר עדין בקצה הקלף כשעוברים את הסף */
+.swipe-card-glow {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  border-radius: inherit;
+}
+
+.glow-keep {
+  box-shadow: inset 0 0 60px rgba(74, 222, 128, 0.25);
+}
+
+.glow-reject {
+  box-shadow: inset 0 0 60px rgba(248, 113, 113, 0.25);
+}
+
+.glow-favorite {
+  box-shadow: inset 0 0 60px rgba(251, 191, 36, 0.25);
+}
+
+/* ===== Action buttons ===== */
+
+.swipe-actions {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-5);
+  padding-bottom: var(--space-2);
+}
+
+.swipe-btn {
+  width: 62px;
+  height: 62px;
+  border-radius: var(--radius-full);
+  font-size: 1.5rem;
+  font-weight: 700;
+  border: 2px solid;
+  background: var(--bg-card);
+  transition: transform var(--dur-fast) var(--ease), box-shadow var(--dur-fast) var(--ease);
+}
+
+.swipe-btn:hover {
+  transform: scale(1.1);
+}
+
+.swipe-btn:active {
+  transform: scale(0.95);
+}
+
+.swipe-btn-undo {
+  color: var(--text-secondary);
+  border-color: var(--border-strong);
+  width: 48px;
+  height: 48px;
+  font-size: 1.1rem;
+}
+
+.swipe-btn-undo:disabled {
+  opacity: 0.3;
+  cursor: default;
+  transform: none;
+  box-shadow: none;
+}
+
+.swipe-btn-reject {
+  color: var(--danger);
+  border-color: var(--danger);
+}
+
+.swipe-btn-reject:hover {
+  box-shadow: 0 0 24px rgba(248, 113, 113, 0.35);
+}
+
+.swipe-btn-fav {
+  color: #fbbf24;
+  border-color: #fbbf24;
+  width: 52px;
+  height: 52px;
+  font-size: 1.25rem;
+}
+
+.swipe-btn-fav:hover {
+  box-shadow: 0 0 24px rgba(251, 191, 36, 0.35);
+}
+
+.swipe-btn-keep {
+  color: var(--success);
+  border-color: var(--success);
+}
+
+.swipe-btn-keep:hover {
+  box-shadow: 0 0 24px rgba(74, 222, 128, 0.35);
+}
+
+/* ===== Day complete ===== */
+
+.swipe-complete {
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-6);
+}
+
+.swipe-complete-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-4);
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-card);
+  padding: var(--space-8) var(--space-6);
+  max-width: 420px;
+  width: 100%;
+  text-align: center;
+  animation: pop-in var(--dur-slow) var(--ease) both;
+}
+
+.swipe-complete-emoji {
+  font-size: 3rem;
+}
+
+.swipe-complete-title {
+  font-size: var(--fs-title);
+  font-weight: 800;
+}
+
+.swipe-complete-stats {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  font-size: var(--fs-body);
+  font-weight: 600;
+}
+
+.stat-keep {
+  color: var(--success);
+}
+
+.stat-fav {
+  color: #fbbf24;
+}
+
+.stat-reject {
+  color: var(--text-secondary);
+}
+
+.swipe-complete-continue {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.swipe-complete-continue-label {
+  color: var(--text-secondary);
+  font-size: var(--fs-small);
+  font-weight: 600;
+}
+
+.swipe-complete-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  margin-top: var(--space-3);
+}
+
+@media (max-width: 600px) {
+  .swipe {
+    padding: var(--space-3);
+  }
+
+  .swipe-btn {
+    width: 56px;
+    height: 56px;
+  }
+}

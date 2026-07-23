@@ -1,0 +1,74 @@
+.welcome {
+  position: relative;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: var(--space-6);
+  background:
+    radial-gradient(60% 50% at 50% 0%, var(--accent-glow) 0%, transparent 70%),
+    var(--bg);
+}
+
+.welcome-topbar {
+  position: absolute;
+  top: var(--space-4);
+  inset-inline-end: var(--space-4);
+}
+
+.welcome-content {
+  max-width: 480px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.welcome-logo {
+  font-size: 3.5rem;
+  animation: pop-in var(--dur-slow) var(--ease) both;
+}
+
+.welcome-title {
+  font-size: var(--fs-hero);
+  font-weight: 800;
+  background: var(--gradient-brand);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  letter-spacing: -0.02em;
+}
+
+.welcome-tagline {
+  font-size: 1.35rem;
+  font-weight: 600;
+}
+
+.welcome-subtagline {
+  color: var(--text-secondary);
+  font-size: var(--fs-body);
+}
+
+.welcome-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-3);
+  margin-top: var(--space-5);
+}
+
+.btn-ghost:disabled {
+  cursor: default;
+  opacity: 0.7;
+}
+
+.welcome-error {
+  color: var(--danger);
+  font-size: var(--fs-small);
+  margin-top: var(--space-2);
+}
+
+.welcome-privacy {
+  color: var(--text-faint);
+  font-size: var(--fs-small);
+  margin-top: var(--space-6);
+}

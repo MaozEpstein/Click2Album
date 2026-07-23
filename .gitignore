@@ -1,0 +1,10 @@
+node_modules/
+dist/
+*.local
+.DS_Store
+tsconfig.tsbuildinfo
+
+# תיקיות תמונות אישיות — לעולם לא עולות לריפו
+בודפאסט/
+photos/
+
