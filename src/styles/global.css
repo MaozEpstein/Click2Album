@@ -114,6 +114,28 @@ img {
   animation: fade-in var(--dur-med) var(--ease) both;
 }
 
+/* כפתור X לסגירת חלוניות */
+.popup-x {
+  position: absolute;
+  top: var(--space-3);
+  inset-inline-start: var(--space-3);
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-full);
+  border: 1px solid var(--border-strong);
+  color: var(--text-secondary);
+  font-size: 0.85rem;
+  transition: background var(--dur-fast) var(--ease), color var(--dur-fast) var(--ease);
+}
+
+.popup-x:hover {
+  background: var(--bg-card-hover);
+  color: var(--text);
+}
+
 /* ===== Screen transitions ===== */
 
 .screen {

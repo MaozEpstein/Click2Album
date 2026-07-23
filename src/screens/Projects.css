@@ -1,0 +1,254 @@
+.projects {
+  padding: var(--space-6);
+  max-width: 1100px;
+  width: 100%;
+  margin: 0 auto;
+}
+
+.projects-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-4);
+  margin-bottom: var(--space-6);
+}
+
+.projects-title {
+  font-size: var(--fs-title);
+  font-weight: 800;
+}
+
+.projects-subtitle {
+  color: var(--text-secondary);
+  font-size: var(--fs-small);
+  margin-top: var(--space-1);
+}
+
+.projects-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: var(--space-4);
+}
+
+.project-card {
+  display: flex;
+  flex-direction: column;
+  text-align: start;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  box-shadow: var(--shadow-card);
+  cursor: pointer;
+  transition: transform var(--dur-fast) var(--ease), border-color var(--dur-fast) var(--ease);
+  animation: pop-in var(--dur-med) var(--ease) both;
+}
+
+.project-card:hover {
+  transform: translateY(-3px);
+  border-color: var(--border-strong);
+}
+
+.project-cover {
+  position: relative;
+  aspect-ratio: 16 / 10;
+  background: var(--bg-elevated);
+}
+
+.project-cover img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.project-cover-empty {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2.2rem;
+  opacity: 0.45;
+}
+
+.project-cover-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to top, rgba(15, 17, 23, 0.45), transparent 40%);
+  pointer-events: none;
+}
+
+.project-delete {
+  position: absolute;
+  top: var(--space-2);
+  inset-inline-end: var(--space-2);
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-full);
+  background: rgba(15, 17, 23, 0.65);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  font-size: 0.85rem;
+  opacity: 0;
+  transition: opacity var(--dur-fast) var(--ease), background var(--dur-fast) var(--ease);
+}
+
+.project-card:hover .project-delete {
+  opacity: 1;
+}
+
+.project-delete:hover {
+  background: var(--danger);
+}
+
+@media (hover: none) {
+  .project-delete {
+    opacity: 1;
+  }
+}
+
+.project-info {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  padding: var(--space-3) var(--space-4);
+}
+
+.project-name {
+  font-weight: 700;
+  font-size: var(--fs-body);
+  cursor: text;
+  border-radius: var(--radius-sm);
+}
+
+.project-name:hover {
+  background: var(--accent-soft);
+}
+
+.project-name-input {
+  font-family: inherit;
+  font-weight: 700;
+  font-size: var(--fs-body);
+  background: var(--bg-elevated);
+  border: 1px solid var(--accent);
+  border-radius: var(--radius-sm);
+  color: var(--text);
+  padding: 2px var(--space-2);
+  width: 100%;
+}
+
+.project-meta {
+  color: var(--text-secondary);
+  font-size: var(--fs-small);
+}
+
+/* כרטיס "אלבום חדש" */
+.project-card-new {
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  min-height: 210px;
+  border-style: dashed;
+  border-color: var(--border-strong);
+  background: transparent;
+}
+
+.project-card-new:hover {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+
+.project-new-plus {
+  width: 52px;
+  height: 52px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-full);
+  background: var(--gradient-brand);
+  color: #fff;
+  font-size: 1.8rem;
+  font-weight: 700;
+  box-shadow: var(--shadow-accent);
+}
+
+.project-new-label {
+  font-weight: 700;
+  color: var(--text-secondary);
+}
+
+.projects-header-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+/* ===== ארכיון ===== */
+
+.project-card-archived {
+  cursor: default;
+}
+
+.project-card-archived .project-cover img {
+  filter: grayscale(0.5) brightness(0.85);
+}
+
+.project-name-static {
+  cursor: default;
+}
+
+.project-name-static:hover {
+  background: none;
+}
+
+.archive-actions {
+  display: flex;
+  gap: var(--space-2);
+  margin-top: var(--space-2);
+}
+
+.archive-btn {
+  font-size: var(--fs-tiny);
+  padding: var(--space-1) var(--space-3);
+}
+
+.archive-btn-danger {
+  color: var(--danger);
+  border-color: var(--danger);
+}
+
+.archive-btn-danger:hover {
+  background: rgba(248, 113, 113, 0.12);
+  color: var(--danger);
+}
+
+.archive-empty {
+  text-align: center;
+  color: var(--text-faint);
+  font-size: 1.05rem;
+  padding: var(--space-8) 0;
+}
+
+.projects-footer {
+  margin-top: var(--space-6);
+  text-align: center;
+  color: var(--text-faint);
+  font-size: var(--fs-small);
+}
+
+@media (max-width: 600px) {
+  .projects {
+    padding: var(--space-4);
+  }
+
+  .projects-grid {
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    gap: var(--space-3);
+  }
+
+  .project-card-new {
+    min-height: 160px;
+  }
+}

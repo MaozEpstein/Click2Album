@@ -16,6 +16,29 @@ export const he = {
   scanningStage: 'יוצרים תצוגות, קוראים תאריכים ומחשבים טביעות אצבע',
   scanningHint: 'אפשר להישען אחורה, זה ייקח רגע',
 
+  projectsTitle: 'הפרויקטים שלי',
+  projectsSubtitle: 'כל אלבום שומר את הבחירות, העריכות וההגדרות שלו',
+  projectNew: 'אלבום חדש',
+  projectLastOpened: (date: string) => `נפתח ${date}`,
+  projectRename: 'לחץ לשינוי שם',
+  projectDelete: 'העברה לארכיון',
+  projectArchiveConfirm: (name: string) =>
+    `האלבום "${name}" יישלח לארכיון ויישמר שם למשך 30 יום.\nבמהלך התקופה אפשר לשחזר אותו מהארכיון.`,
+  archiveTitle: 'ארכיון',
+  archiveSubtitle: 'אלבומים שנמחקו נשמרים כאן 30 יום ואז נמחקים לצמיתות',
+  archiveEmpty: 'הארכיון ריק',
+  archiveRestore: 'שחזור',
+  archiveDaysLeft: (days: number) =>
+    days <= 0 ? 'נמחק בקרוב' : days === 1 ? 'נותר יום אחד' : `נותרו ${days} ימים`,
+  archiveDeleteForever: 'מחיקה לצמיתות',
+  archiveDeleteConfirm: (name: string) =>
+    `למחוק את "${name}" לצמיתות — עכשיו?\n\nכל נתוני הפרויקט יימחקו ולא ניתן יהיה לשחזר. התמונות המקוריות בתיקייה שלך לא נמחקות.`,
+  backToProjects: 'חזרה לפרויקטים',
+  projectsStorage: (used: string) => `סה"כ בשימוש: ${used} אחסון מקומי`,
+  myProjects: 'הפרויקטים שלי',
+  rescanProject: 'סרוק מחדש',
+  rescanConfirm: 'לסרוק מחדש את הפרויקט הזה? הבחירות הנוכחיות בו יימחקו.',
+
   daysTitle: 'הימים שלך',
   daysSubtitle: (days: number, photos: number) => `${days} ימים · ${photos} תמונות`,
   photosInDay: (n: number) => `${n} תמונות`,
@@ -74,6 +97,23 @@ export const he = {
   embedding: (done: number, total: number) => `מנתח דמיון בין תמונות… ${done}/${total}`,
   scoring: (done: number, total: number) => `מדרג תמונות… ${done}/${total}`,
   subjectAnalyzing: (done: number, total: number) => `מזהה נושאים בנופים… ${done}/${total}`,
+
+  stageClassify: 'מזהה אנשים ונופים',
+  stageEmbed: 'מנתח דמיון',
+  stageScore: 'מדרג תמונות',
+  stageSubject: 'מזהה נושאים',
+  analysisChipText: (stage: string, percent: number, eta: string | null) =>
+    `${stage} · ${percent}%${eta ? ` · ${eta}` : ''}`,
+  etaShort: (minutes: number) => (minutes < 1 ? 'פחות מדקה' : `כ-${minutes} דק'`),
+
+  analysisIntroTitle: 'התמונות נקלטו! 📸',
+  analysisIntroBody: (eta: string) =>
+    `ברקע ממשיכים לעבור עליהן — לזהות אנשים, לקבץ דומות ולדרג. המעבר המלא יסתיים בעוד ${eta}, ובינתיים אפשר להתחיל להסתכל על התמונות ולבחור.`,
+  analysisDoneTitle: 'הניתוח הושלם! ✨',
+  analysisDoneBody:
+    'כל התמונות נותחו — הקיבוץ, הדירוג והסיווג מעודכנים במלואם. אפשר להתחיל בהכנת האלבום!',
+  popupClose: 'סגור',
+  popupStart: 'להתחלה',
   recommended: 'מומלצת ⭐',
   categoryAll: 'הכל',
   categoryBackground: 'נוף',

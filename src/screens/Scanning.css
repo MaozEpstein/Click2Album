@@ -57,10 +57,15 @@
   transition: width var(--dur-fast) var(--ease);
 }
 
+/* הערכת הזמן — הנתון שהכי חשוב למשתמש, בולט ובלתי-אפשרי לפספס */
 .scanning-eta {
-  color: var(--text-secondary);
-  font-size: var(--fs-small);
-  font-weight: 600;
+  font-size: 1.6rem;
+  font-weight: 800;
+  background: linear-gradient(135deg, #fbbf24, #f97316);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  margin-top: var(--space-2);
 }
 
 .scanning-stage {

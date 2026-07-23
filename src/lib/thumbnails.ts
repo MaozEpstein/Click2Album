@@ -41,14 +41,35 @@ async function renderWebP(bitmap: ImageBitmap, maxSize: number, quality: number)
 /**
  * יוצר משני פענוח אחד של הקובץ שני נגזרים: thumbnail (320px) ו-preview (1280px).
  * createImageBitmap מטפל בתיקון אוריינטציית EXIF אוטומטית.
+ *
+ * אופטימיזציה: כשידועים ממדי המקור (מ-EXIF) והתמונה גדולה, הפענוח נעשה
+ * ישירות לגודל ה-preview (resizeWidth/Height) — הדפדפן מדלג על פענוח מלא
+ * של 12MP+ ומחזיר bitmap קטן. כל הנגזרות ממילא נגזרות מ-1280 ומטה,
+ * ויצוא ה-PDF קורא את קבצי המקור — אפס השפעה על התוצאות.
  */
-export async function createDerivatives(file: File): Promise<DerivativesResult | null> {
+export async function createDerivatives(
+  file: File,
+  sizeHint?: { width: number; height: number } | null,
+): Promise<DerivativesResult | null> {
   let bitmap: ImageBitmap;
   try {
-    bitmap = await createImageBitmap(file);
+    if (sizeHint && Math.max(sizeHint.width, sizeHint.height) > PREVIEW_MAX_SIZE * 1.1) {
+      // הצד הארוך מוקטן ל-1280 תוך שמירת יחס (מציינים רק ציר אחד)
+      const options: ImageBitmapOptions =
+        sizeHint.width >= sizeHint.height
+          ? { resizeWidth: PREVIEW_MAX_SIZE, resizeQuality: 'high' }
+          : { resizeHeight: PREVIEW_MAX_SIZE, resizeQuality: 'high' };
+      bitmap = await createImageBitmap(file, options);
+    } else {
+      bitmap = await createImageBitmap(file);
+    }
   } catch {
-    // פורמט שהדפדפן לא יודע לפענח (למשל HEIC בחלק מהדפדפנים)
-    return null;
+    // פענוח מוקטן נכשל / פורמט בעייתי — ניסיון פענוח רגיל לפני ויתור
+    try {
+      bitmap = await createImageBitmap(file);
+    } catch {
+      return null;
+    }
   }
 
   try {

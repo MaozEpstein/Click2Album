@@ -85,9 +85,18 @@ interface Click2AlbumDB extends DBSchema {
 }
 
 let dbPromise: Promise<IDBPDatabase<Click2AlbumDB>> | null = null;
+let dbName = 'click2album';
+
+/** מעבר פרויקט: סוגר את החיבור הנוכחי ופותח את מסד הפרויקט החדש */
+export function resetDbConnection(newDbName: string): void {
+  if (newDbName === dbName && dbPromise) return;
+  dbPromise?.then((db) => db.close()).catch(() => {});
+  dbPromise = null;
+  dbName = newDbName;
+}
 
 function getDB(): Promise<IDBPDatabase<Click2AlbumDB>> {
-  dbPromise ??= openDB<Click2AlbumDB>('click2album', 22, {
+  dbPromise ??= openDB<Click2AlbumDB>(dbName, 22, {
     upgrade(db, oldVersion, _newVersion, tx) {
       // עד גרסה 3 שינויי הסכימה דרשו סריקה מחדש; מגרסה 3 והלאה משמרים נתונים
       if (oldVersion < 3) {

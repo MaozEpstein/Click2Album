@@ -9,7 +9,13 @@ export interface AlbumSettings {
   targetPages: number | null;
 }
 
-const STORAGE_KEY = 'click2album-settings';
+import { getActiveProjectId } from './projects';
+
+/** הגדרות פר-פרויקט — כל אלבום עם ההעדפות שלו */
+function storageKey(): string {
+  const id = getActiveProjectId();
+  return id ? `click2album-settings-${id}` : 'click2album-settings';
+}
 
 const DEFAULTS: AlbumSettings = {
   separateBackgrounds: true,
@@ -19,7 +25,7 @@ const DEFAULTS: AlbumSettings = {
 
 export function getSettings(): AlbumSettings {
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
+    const raw = localStorage.getItem(storageKey());
     if (!raw) return { ...DEFAULTS };
     return { ...DEFAULTS, ...(JSON.parse(raw) as Partial<AlbumSettings>) };
   } catch {
@@ -28,7 +34,7 @@ export function getSettings(): AlbumSettings {
 }
 
 export function saveSettings(settings: AlbumSettings): void {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(settings));
+  localStorage.setItem(storageKey(), JSON.stringify(settings));
 }
 
 /** מזהה ייחודי של ההגדרות המשפיעות על העימוד — חלק מ-fingerprint האלבום */

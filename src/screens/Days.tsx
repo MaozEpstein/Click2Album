@@ -15,7 +15,8 @@ interface DaysProps {
   onOpenDay: (dayKey: string) => void;
   onOpenAlbum: () => void;
   onOpenCleanup: () => void;
-  onNewProject: () => void;
+  onOpenProjects: () => void;
+  onRescan: () => void;
 }
 
 /** תמונת נושא של יום — thumbnail עם ניהול object URL */
@@ -92,7 +93,8 @@ export function Days({
   onOpenDay,
   onOpenAlbum,
   onOpenCleanup,
-  onNewProject,
+  onOpenProjects,
+  onRescan,
 }: DaysProps) {
   const t = useT();
   const groups = useMemo(() => groupByDay(photos), [photos]);
@@ -105,9 +107,6 @@ export function Days({
     [photos],
   );
 
-  const handleNewProject = () => {
-    if (window.confirm(t.newProjectConfirm)) onNewProject();
-  };
 
   return (
     <div className="screen days">
@@ -141,8 +140,11 @@ export function Days({
             </button>
           )}
           <ThemeSwitcher />
-          <button className="btn-ghost" onClick={handleNewProject}>
-            {t.newProject}
+          <button className="btn-ghost" onClick={onRescan}>
+            {t.rescanProject}
+          </button>
+          <button className="btn-ghost" onClick={onOpenProjects}>
+            {t.myProjects}
           </button>
         </div>
       </header>

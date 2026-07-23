@@ -1,8 +1,9 @@
 import type { PhotoSource, SourcePhotoFile } from '../sources/types';
 import { extractDateInfo } from './exif';
-import { createDerivatives } from './thumbnails';
+import { createDerivatives, type DerivativesResult } from './thumbnails';
 import { savePhoto, saveProjectState, type PhotoRecord } from './db';
 import { computeFlags } from './quality';
+import type { ScanWorkerRequest, ScanWorkerResponse } from './scanWorker';
 
 export interface ScanProgress {
   processed: number;
@@ -15,6 +16,55 @@ export interface ScanProgress {
 }
 
 const LATEST_THUMBS_SHOWN = 8;
+
+/**
+ * בריכת Workers לסריקה: הפענוח והדחיסה מתפזרים על הליבות.
+ * ליבה אחת נשארת פנויה לממשק; תקרה של 6 (מעבר לזה — זיכרון ותורים משותפים).
+ */
+function workerCount(): number {
+  return Math.min(6, Math.max(1, (navigator.hardwareConcurrency || 4) - 1));
+}
+
+interface WorkerSlot {
+  worker: Worker;
+  resolve: ((result: DerivativesResult | null) => void) | null;
+}
+
+function createPool(): WorkerSlot[] {
+  try {
+    return Array.from({ length: workerCount() }, () => {
+      const worker = new Worker(new URL('./scanWorker.ts', import.meta.url), {
+        type: 'module',
+      });
+      const slot: WorkerSlot = { worker, resolve: null };
+      worker.onmessage = (e: MessageEvent<ScanWorkerResponse>) => {
+        const resolve = slot.resolve;
+        slot.resolve = null;
+        resolve?.(e.data.result);
+      };
+      worker.onerror = () => {
+        const resolve = slot.resolve;
+        slot.resolve = null;
+        resolve?.(null);
+      };
+      return slot;
+    });
+  } catch {
+    return []; // דפדפן בלי Workers — נסיגה לעיבוד בחוט הראשי
+  }
+}
+
+function runOnWorker(
+  slot: WorkerSlot,
+  taskId: number,
+  file: File,
+  sizeHint: { width: number; height: number } | null,
+): Promise<DerivativesResult | null> {
+  return new Promise((resolve) => {
+    slot.resolve = resolve;
+    slot.worker.postMessage({ taskId, file, sizeHint } satisfies ScanWorkerRequest);
+  });
+}
 
 /**
  * סורק מקור תמונות: לכל תמונה מחלץ תאריך, יוצר thumbnail ושומר ל-IndexedDB.
@@ -39,17 +89,34 @@ export async function scanSource(
   const total = files.length;
   const startedAt = performance.now();
 
-  for (const { id, name, file } of files) {
-    const [dateInfo, derived] = await Promise.all([extractDateInfo(file), createDerivatives(file)]);
-    if (!derived) continue; // קובץ שלא ניתן לפענוח — מדלגים
+  const pool = createPool();
+  let nextIndex = 0;
+
+  /** מעבד תמונה אחת (העבודה הכבדה ב-worker אם קיים) ושומר */
+  const processOne = async (
+    entry: SourcePhotoFile,
+    slot: WorkerSlot | null,
+  ): Promise<void> => {
+    const { id, name, file } = entry;
+    // EXIF קודם — ממדי המקור מאפשרים פענוח מוקטן מהיר ב-createDerivatives
+    const dateInfo = await extractDateInfo(file);
+    const sizeHint =
+      dateInfo.pixelWidth && dateInfo.pixelHeight
+        ? { width: dateInfo.pixelWidth, height: dateInfo.pixelHeight }
+        : null;
+    const derived = slot
+      ? await runOnWorker(slot, nextIndex, file, sizeHint)
+      : await createDerivatives(file, sizeHint);
+    if (!derived) return; // קובץ שלא ניתן לפענוח — מדלגים
 
     const record: PhotoRecord = {
       id,
       name,
       takenAt: dateInfo.takenAt,
       hasExif: dateInfo.hasExif,
-      width: derived.width,
-      height: derived.height,
+      // ממדי המקור המלאים מ-EXIF כשקיימים (עתידית: שומר איכות הדפסה); אחרת מהפענוח
+      width: dateInfo.pixelWidth ?? derived.width,
+      height: dateInfo.pixelHeight ?? derived.height,
       thumbnail: derived.thumbnail,
       preview: derived.preview,
       phash: derived.phash,
@@ -85,10 +152,25 @@ export async function scanSource(
         ? Math.round(((performance.now() - startedAt) / processed / 1000) * (total - processed))
         : null;
     onProgress({ processed, total, etaSeconds, latestThumbnails: [...latest] });
+  };
 
-    // מפנה את ה-main thread לרינדור בין תמונות
-    if (processed % 5 === 0) {
-      await new Promise((r) => setTimeout(r, 0));
+  if (pool.length > 0) {
+    // כל worker מריץ "צרכן" שמושך את המשימה הבאה מהתור עד שנגמר
+    await Promise.all(
+      pool.map(async (slot) => {
+        while (nextIndex < files.length) {
+          const entry = files[nextIndex];
+          nextIndex += 1;
+          await processOne(entry, slot);
+        }
+      }),
+    );
+    for (const slot of pool) slot.worker.terminate();
+  } else {
+    // נסיגה: עיבוד סדרתי בחוט הראשי
+    for (const entry of files) {
+      await processOne(entry, null);
+      if (processed % 5 === 0) await new Promise((r) => setTimeout(r, 0));
     }
   }
 

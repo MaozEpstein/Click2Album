@@ -1,10 +1,22 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Welcome } from './screens/Welcome';
 import { Scanning } from './screens/Scanning';
 import { Days } from './screens/Days';
 import { Swipe } from './screens/Swipe';
 import { Album } from './screens/Album';
 import { Cleanup } from './screens/Cleanup';
+import { Projects } from './screens/Projects';
+import {
+  createProject,
+  getActiveProjectId,
+  setActiveProjectId,
+  listProjects,
+  openProject,
+  projectDbName,
+  updateProjectMeta,
+  type ProjectMeta,
+} from './lib/projects';
+import { resetDbConnection } from './lib/db';
 import { buildAlbum } from './lib/layoutEngine';
 import { pickLocalFolder } from './sources/localFolder';
 import { scanSource, type ScanProgress } from './lib/scan';
@@ -20,7 +32,7 @@ import {
 import { groupByDay } from './lib/days';
 import { selectionFingerprint, type AlbumLayout } from './lib/album';
 import { getSettings, layoutSettingsKey } from './lib/settings';
-import { facesPending, type FacesProgress } from './lib/faces';
+import { facesPending } from './lib/faces';
 import { embedPending } from './lib/embed';
 import { scorePending } from './lib/bestShot';
 import { subjectPending } from './lib/subject';
@@ -35,7 +47,8 @@ type Screen =
   | { name: 'days'; photos: PhotoRecord[] }
   | { name: 'swipe'; photos: PhotoRecord[]; dayKey: string }
   | { name: 'album'; photos: PhotoRecord[]; layout: AlbumLayout }
-  | { name: 'cleanup'; photos: PhotoRecord[] };
+  | { name: 'cleanup'; photos: PhotoRecord[] }
+  | { name: 'projects'; projects: ProjectMeta[] };
 
 /** תמונות פעילות — לא כולל מסוננות */
 function visibleOf(photos: PhotoRecord[]): PhotoRecord[] {
@@ -66,65 +79,157 @@ function buildAlbumWithSettings(photos: PhotoRecord[]): AlbumLayout {
 export function App() {
   const [screen, setScreen] = useState<Screen>({ name: 'loading' });
   const [error, setError] = useState<string | null>(null);
-  const [classifyProgress, setClassifyProgress] = useState<FacesProgress | null>(null);
-  const [analysisLabel, setAnalysisLabel] = useState<
-    'classify' | 'embed' | 'score' | 'subject'
-  >('classify');
+  /** מצב שרשרת הניתוח האחודה — אחוז רציף + שלב + הערכת זמן */
+  const [analysis, setAnalysis] = useState<{
+    stage: 'classify' | 'embed' | 'score' | 'subject';
+    percent: number;
+    etaSeconds: number | null;
+  } | null>(null);
+  const chainRef = useRef({ running: false, id: 0 });
+  const introShownRef = useRef(false);
+  const [introOpen, setIntroOpen] = useState(false);
+  const [doneOpen, setDoneOpen] = useState(false);
 
-  // ניתוח רקע: פנים → דמיון → דירוג. מתחדש מכל מסך שיש בו תמונות —
-  // המנתחים עצמם מדלגים על מה שכבר חושב, אז הפעלה חוזרת בטוחה.
+  /** ממוצע גס לפעולה — להערכת זמן ראשונית לפני שנמדד קצב אמיתי */
+  const ROUGH_SECONDS_PER_OP = 0.35;
+
+  // ניתוח רקע: פנים → דמיון → דירוג → נושאים. מתחדש מכל מסך שיש בו תמונות.
+  // מנעול על השרשרת כולה + מזהה-ריצה: רק השרשרת הפעילה מדווחת לתצוגה.
   useEffect(() => {
     if (!('photos' in screen)) return;
     const visible = visibleOf(screen.photos);
-    const needsClassify = visible.some((p) => p.faceCount === null);
-    const needsEmbed = visible.some((p) => p.embedding === null);
-    const needsScore = visible.some((p) => p.bestShotScore === null);
-    const needsSubject = visible.some((p) => p.subjectSig === null && p.faceCount === 0);
-    if (!needsClassify && !needsEmbed && !needsScore && !needsSubject) return;
+    if (chainRef.current.running) return;
+
+    const pendingClassify = visible.filter((p) => p.faceCount === null).length;
+    const pendingEmbed = visible.filter((p) => p.embedding === null).length;
+    const pendingScore = visible.filter((p) => p.bestShotScore === null).length;
+    // הערכה עליונה — כמות הנושאים הסופית ידועה רק אחרי סיווג הפנים
+    const pendingSubject = visible.filter(
+      (p) => p.subjectSig === null && (p.faceCount === 0 || p.faceCount === null),
+    ).length;
+    const totalOps = pendingClassify + pendingEmbed + pendingScore + pendingSubject;
+    if (totalOps === 0) return;
+
+    chainRef.current = { running: true, id: chainRef.current.id + 1 };
+    const runId = chainRef.current.id;
+    const startedAt = performance.now();
+    let baseOps = 0;
+
+    const report =
+      (stage: 'classify' | 'embed' | 'score' | 'subject') =>
+      (p: { done: number; total: number }) => {
+        if (chainRef.current.id !== runId) return; // ריצה ישנה — לא מדווחת
+        const doneOps = baseOps + p.done;
+        const percent = Math.min(99, Math.round((doneOps / totalOps) * 100));
+        const elapsed = (performance.now() - startedAt) / 1000;
+        const etaSeconds =
+          doneOps >= 5
+            ? Math.round((elapsed / doneOps) * (totalOps - doneOps))
+            : Math.round((totalOps - doneOps) * ROUGH_SECONDS_PER_OP);
+        setAnalysis({ stage, percent, etaSeconds });
+      };
+
     (async () => {
-      if (needsClassify) {
-        setAnalysisLabel('classify');
+      setAnalysis({
+        stage: 'classify',
+        percent: 0,
+        etaSeconds: Math.round(totalOps * ROUGH_SECONDS_PER_OP),
+      });
+      try {
         try {
-          await facesPending(visible, setClassifyProgress);
+          await facesPending(visible, report('classify'));
         } catch {
-          // הסטטוס נרשם ב-faceStatus ומוצג במסך; ממשיכים לשלב הבא
+          // הסטטוס נרשם ב-faceStatus; ממשיכים לשלב הבא
+        }
+        baseOps = pendingClassify;
+        await embedPending(visible, report('embed'));
+        baseOps += pendingEmbed;
+        await scorePending(visible, report('score'));
+        baseOps += pendingScore;
+        await subjectPending(visible, report('subject'));
+      } finally {
+        chainRef.current.running = false;
+        if (chainRef.current.id === runId) {
+          setAnalysis(null);
+          // הודעת סיום — רק אחרי ריצה משמעותית (לא על השלמות זעירות)
+          if (totalOps >= 10) setDoneOpen(true);
         }
       }
-      if (needsEmbed) {
-        setAnalysisLabel('embed');
-        await embedPending(visible, setClassifyProgress);
-      }
-      if (needsScore) {
-        setAnalysisLabel('score');
-        await scorePending(visible, setClassifyProgress);
-      }
-      // נושאים תלויי סיווג פנים — רץ אחרי שהסיווג הסתיים
-      setAnalysisLabel('subject');
-      await subjectPending(visible, setClassifyProgress);
-      setClassifyProgress(null);
     })();
   }, [screen]);
 
-  // שחזור מצב: אם כבר נסרק פרויקט — ישר למסך הימים
+  // חלונית "התמונות נקלטו" — בכניסה הראשונה למסך הימים כשהניתוח עוד רץ
+  useEffect(() => {
+    if (screen.name === 'days' && analysis && !introShownRef.current) {
+      introShownRef.current = true;
+      setIntroOpen(true);
+    }
+  }, [screen, analysis]);
+
+  // עלייה: אם יש פרויקטים — מסך הפרויקטים; אחרת מסך פתיחה (פרויקט ראשון)
   useEffect(() => {
     (async () => {
-      const project = await getProjectState();
-      if (project?.scanCompleted) {
-        const photos = await getAllPhotos();
-        if (photos.length > 0) {
-          setScreen({ name: 'days', photos });
-          return;
-        }
+      const projects = await listProjects();
+      if (projects.length === 0) {
+        setScreen({ name: 'welcome' });
+        return;
       }
-      setScreen({ name: 'welcome' });
+      setScreen({ name: 'projects', projects });
     })();
   }, []);
 
-  const handlePickFolder = useCallback(async () => {
-    setError(null);
-    const picked = await pickLocalFolder();
-    if (!picked) return;
+  const refreshProjects = useCallback(async () => {
+    const projects = await listProjects();
+    if (projects.length === 0) setScreen({ name: 'welcome' });
+    else setScreen({ name: 'projects', projects });
+  }, []);
 
+  /**
+   * תמונת השער של פרויקט — "התמונה שמספרת איפה היינו", לא הפנים הכי מחייכות:
+   * נוף מועדף ← נוף נבחר ← (נסיגה לאלבומים בלי נופים) מועדפת ← נבחרת ← הכי טובה.
+   * בתוך כל קבוצה: עדיפות לנושא בולט (מקום איקוני), לאוריינטציה אופקית
+   * (מתאימה לכרטיס), ולבסוף הציון האסתטי.
+   */
+  const pickCover = (photos: PhotoRecord[]): Blob | null => {
+    const coverRank = (p: PhotoRecord): number =>
+      (p.subjectSig && p.subjectSig.length > 0 ? 200 : 0) +
+      (p.width >= p.height ? 100 : 0) +
+      (p.bestShotScore ?? 0);
+    const best = (pool: PhotoRecord[]) =>
+      pool.length > 0 ? pool.reduce((b, p) => (coverRank(p) > coverRank(b) ? p : b)) : null;
+
+    const landscapes = photos.filter((p) => p.faceCount === 0);
+    const pick =
+      best(landscapes.filter((p) => p.decision === 'favorite')) ??
+      best(landscapes.filter((p) => p.decision === 'keep')) ??
+      best(photos.filter((p) => p.decision === 'favorite')) ??
+      best(photos.filter((p) => p.decision === 'keep')) ??
+      best(photos) ??
+      photos[0];
+    return pick?.thumbnail ?? null;
+  };
+
+  /** כניסה לפרויקט: פתיחת המסד שלו, רענון כרטיס הפרויקט וטעינת הימים */
+  const handleOpenProject = useCallback(async (id: string) => {
+    await openProject(id);
+    resetDbConnection(projectDbName(id));
+    const project = await getProjectState();
+    const photos = await getAllPhotos();
+    if (project?.scanCompleted && photos.length > 0) {
+      // עדכון שער + מונה — מכסה גם פרויקטים שהוגרו בלי מטא-דאטה
+      const visible = visibleOf(photos);
+      await updateProjectMeta(id, {
+        photoCount: visible.length,
+        coverThumb: pickCover(visible),
+      });
+      setScreen({ name: 'days', photos });
+    } else {
+      setScreen({ name: 'welcome' });
+    }
+  }, []);
+
+  /** סריקה לתוך הפרויקט הפעיל (אחרי שנוצר/נפתח) */
+  const runScan = useCallback(async (picked: NonNullable<Awaited<ReturnType<typeof pickLocalFolder>>>) => {
     await clearProject();
     if (picked.handle) await saveSourceHandle(picked.handle);
     setScreen({
@@ -143,6 +248,14 @@ export function App() {
     }
 
     const photos = await getAllPhotos();
+    // עדכון כרטיס הפרויקט: מונה + תמונת שער
+    const activeId = getActiveProjectId();
+    if (activeId) {
+      await updateProjectMeta(activeId, {
+        photoCount: photos.length,
+        coverThumb: pickCover(visibleOf(photos)),
+      });
+    }
     // אם נמצאו חשודות — קודם מסך הניקוי
     if (suspectsOf(photos).length > 0) {
       setScreen({ name: 'cleanup', photos });
@@ -151,11 +264,39 @@ export function App() {
     }
   }, []);
 
-  const handleNewProject = useCallback(async () => {
-    await clearProject();
+  /** בחירת תיקייה לפרויקט חדש: יוצר פרויקט (שם = שם התיקייה) וסורק לתוכו */
+  const handlePickFolder = useCallback(async () => {
     setError(null);
-    setScreen({ name: 'welcome' });
-  }, []);
+    const picked = await pickLocalFolder();
+    if (!picked) return;
+
+    const folderName = picked.handle?.name?.trim();
+    // פרויקט פעיל ריק (נוצר ולא נסרק) — ממוחזר במקום ליצור עוד אחד
+    const activeId = getActiveProjectId();
+    let projectId = activeId;
+    if (activeId) {
+      const existing = await getAllPhotos().catch(() => []);
+      if (existing.length > 0) projectId = null;
+    }
+    if (!projectId) {
+      const project = await createProject(folderName || t.projectNew);
+      projectId = project.id;
+    } else if (folderName) {
+      await updateProjectMeta(projectId, { name: folderName });
+    }
+    await openProject(projectId);
+    resetDbConnection(projectDbName(projectId));
+    await runScan(picked);
+  }, [runScan]);
+
+  /** סריקה מחדש של הפרויקט הנוכחי (דורס רק אותו) */
+  const handleRescan = useCallback(async () => {
+    if (!window.confirm(t.rescanConfirm)) return;
+    setError(null);
+    const picked = await pickLocalFolder();
+    if (!picked) return;
+    await runScan(picked);
+  }, [runScan]);
 
   const handleOpenDay = useCallback((dayKey: string) => {
     setScreen((s) =>
@@ -167,6 +308,15 @@ export function App() {
   const handleBackToDays = useCallback(async () => {
     const photos = await getAllPhotos();
     setScreen({ name: 'days', photos });
+    // עדכון שקט של כרטיס הפרויקט (השער עשוי להשתנות עם הבחירות)
+    const activeId = getActiveProjectId();
+    if (activeId) {
+      const visible = visibleOf(photos);
+      updateProjectMeta(activeId, {
+        photoCount: visible.length,
+        coverThumb: pickCover(visible),
+      });
+    }
   }, []);
 
   /** טוען אלבום שמור (עם עריכות) אם הבחירות וההגדרות לא השתנו; אחרת בונה מחדש */
@@ -208,16 +358,50 @@ export function App() {
     setScreen({ name: 'cleanup', photos });
   }, []);
 
-  // חיווי ניתוח רקע — גלוי בכל מסך
-  const analysisChip = classifyProgress ? (
+  // חיווי ניתוח רקע אחוד — אחוז רציף שרק עולה + שלב + זמן משוער
+  const stageLabels = {
+    classify: t.stageClassify,
+    embed: t.stageEmbed,
+    score: t.stageScore,
+    subject: t.stageSubject,
+  } as const;
+  const etaText = (seconds: number | null) =>
+    seconds === null ? null : t.etaShort(Math.round(seconds / 60));
+  const analysisChip = analysis ? (
     <div className="analysis-chip" dir="rtl">
-      {analysisLabel === 'subject'
-        ? t.subjectAnalyzing(classifyProgress.done, classifyProgress.total)
-        : analysisLabel === 'score'
-          ? t.scoring(classifyProgress.done, classifyProgress.total)
-          : analysisLabel === 'embed'
-            ? t.embedding(classifyProgress.done, classifyProgress.total)
-            : t.classifying(classifyProgress.done, classifyProgress.total)}
+      {t.analysisChipText(stageLabels[analysis.stage], analysis.percent, etaText(analysis.etaSeconds))}
+    </div>
+  ) : null;
+
+  // חלוניות צפות: "התמונות נקלטו" בתחילת הניתוח, "הניתוח הושלם" בסופו
+  const popup = introOpen ? (
+    <div className="export-overlay" onClick={() => setIntroOpen(false)}>
+      <div className="export-modal" onClick={(e) => e.stopPropagation()}>
+        <button className="popup-x" onClick={() => setIntroOpen(false)} aria-label={t.popupClose}>
+          ✕
+        </button>
+        <h2 className="export-title">{t.analysisIntroTitle}</h2>
+        <p className="export-warning">
+          {t.analysisIntroBody(etaText(analysis?.etaSeconds ?? null) ?? t.etaShort(2))}
+        </p>
+        <button className="btn-primary" onClick={() => setIntroOpen(false)}>
+          {t.popupStart}
+        </button>
+      </div>
+    </div>
+  ) : doneOpen ? (
+    <div className="export-overlay" onClick={() => setDoneOpen(false)}>
+      <div className="export-modal" onClick={(e) => e.stopPropagation()}>
+        <button className="popup-x" onClick={() => setDoneOpen(false)} aria-label={t.popupClose}>
+          ✕
+        </button>
+        <div className="export-done-emoji" aria-hidden>✨</div>
+        <h2 className="export-title">{t.analysisDoneTitle}</h2>
+        <p className="export-warning">{t.analysisDoneBody}</p>
+        <button className="btn-primary" onClick={() => setDoneOpen(false)}>
+          {t.popupClose}
+        </button>
+      </div>
     </div>
   ) : null;
 
@@ -237,7 +421,8 @@ export function App() {
           onOpenDay={handleOpenDay}
           onOpenAlbum={handleOpenAlbum}
           onOpenCleanup={handleOpenCleanup}
-          onNewProject={handleNewProject}
+          onOpenProjects={refreshProjects}
+          onRescan={handleRescan}
         />
       );
     case 'swipe': {
@@ -250,7 +435,8 @@ export function App() {
             onOpenDay={handleOpenDay}
             onOpenAlbum={handleOpenAlbum}
             onOpenCleanup={handleOpenCleanup}
-            onNewProject={handleNewProject}
+            onOpenProjects={refreshProjects}
+            onRescan={handleRescan}
           />
         );
       }
@@ -264,6 +450,18 @@ export function App() {
     }
     case 'cleanup':
       return <Cleanup suspects={suspectsOf(screen.photos)} onDone={handleBackToDays} />;
+    case 'projects':
+      return (
+        <Projects
+          projects={screen.projects}
+          onOpen={handleOpenProject}
+          onCreate={() => {
+            setActiveProjectId(null);
+            setScreen({ name: 'welcome' });
+          }}
+          onChanged={refreshProjects}
+        />
+      );
     case 'album': {
       const photosById = new Map(screen.photos.map((p) => [p.id, p]));
       return (
@@ -283,6 +481,7 @@ export function App() {
     <>
       {content}
       {analysisChip}
+      {popup}
     </>
   );
 }
