@@ -84,6 +84,38 @@ img {
   background: transparent;
 }
 
+/* זוהר זורם בפסי התקדמות — שיין עדין שנע לאורך המילוי */
+.swipe-progress-fill,
+.scanning-bar-fill,
+.day-progress-bar-fill,
+.export-progress-fill {
+  position: relative;
+  overflow: hidden;
+}
+
+.swipe-progress-fill::after,
+.scanning-bar-fill::after,
+.day-progress-bar-fill::after,
+.export-progress-fill::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    100deg,
+    transparent 30%,
+    rgba(255, 255, 255, 0.35) 50%,
+    transparent 70%
+  );
+  transform: translateX(-100%);
+  animation: bar-shine 2.4s ease-in-out infinite;
+}
+
+@keyframes bar-shine {
+  to {
+    transform: translateX(100%);
+  }
+}
+
 /* צבע סימון טקסט תואם מותג */
 ::selection {
   background: var(--accent-soft);

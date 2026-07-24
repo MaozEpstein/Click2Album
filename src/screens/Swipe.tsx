@@ -830,7 +830,7 @@ export function Swipe({ day, budgetTarget, onBack }: SwipeProps) {
         </button>
         <div className="swipe-header-info">
           <span className="swipe-day-title">{formatDayTitle(day) ?? t.noDateBucket}</span>
-          <span className="swipe-remaining">
+          <span className="swipe-remaining" key={remaining}>
             {t.swipeRemaining(remaining, stacks.length)}
             {stacks.length < totalPhotos && ` · ${t.photosInDay(totalPhotos)}`}
           </span>
@@ -976,9 +976,7 @@ export function Swipe({ day, budgetTarget, onBack }: SwipeProps) {
         {expanded && (
           <div className="stack-overlay">
             <p className="stack-overlay-hint">{t.stackHint}</p>
-            <div
-              className={`stack-grid${current.photos.length <= 4 ? ' stack-grid-few' : ''}`}
-            >
+            <div className="stack-grid">
               {[...current.photos]
                 .sort((a, b) => (b.bestShotScore ?? -1) - (a.bestShotScore ?? -1))
                 .map((photo) => (

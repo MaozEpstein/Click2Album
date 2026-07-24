@@ -8,7 +8,7 @@ interface ScanningProps {
 }
 
 /** thumbnail בודד — מנהל object URL עם ניקוי אוטומטי */
-function Thumb({ blob }: { blob: Blob }) {
+function Thumb({ blob, style }: { blob: Blob; style: React.CSSProperties }) {
   const [url, setUrl] = useState<string | null>(null);
 
   useEffect(() => {
@@ -17,7 +17,7 @@ function Thumb({ blob }: { blob: Blob }) {
     return () => URL.revokeObjectURL(objectUrl);
   }, [blob]);
 
-  return url ? <img className="scanning-thumb" src={url} alt="" /> : null;
+  return url ? <img className="scanning-thumb" style={style} src={url} alt="" /> : null;
 }
 
 export function Scanning({ progress }: ScanningProps) {
@@ -52,9 +52,23 @@ export function Scanning({ progress }: ScanningProps) {
         <p className="scanning-hint">{t.scanningHint}</p>
 
         <div className="scanning-thumbs">
-          {progress.latestThumbnails.map((blob, i) => (
-            <Thumb key={progress.processed - i} blob={blob} />
-          ))}
+          {progress.latestThumbnails.map((blob, i) => {
+            const seq = progress.processed - i;
+            // זווית והיסט דטרמיניסטיים לפי מספר התמונה — הערימה לא "רוקדת" ב-render
+            const angle = ((seq * 47) % 17) - 8;
+            const dx = ((seq * 31) % 25) - 12;
+            const dy = ((seq * 19) % 13) - 6;
+            return (
+              <Thumb
+                key={seq}
+                blob={blob}
+                style={{
+                  transform: `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px)) rotate(${angle}deg)`,
+                  zIndex: progress.latestThumbnails.length - i,
+                }}
+              />
+            );
+          })}
         </div>
       </div>
     </div>

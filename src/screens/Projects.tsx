@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useT } from '../i18n';
 import {
   ARCHIVE_RETENTION_MS,
@@ -37,6 +37,22 @@ function ProjectCard({
   const coverUrl = useObjectUrl(project.coverThumb);
   const [renaming, setRenaming] = useState(false);
   const [name, setName] = useState(project.name);
+  const cardRef = useRef<HTMLDivElement>(null);
+
+  // tilt תלת-ממדי עדין בעקבות העכבר — נכתב ישירות ל-DOM בלי re-render
+  const handleTilt = (e: React.MouseEvent) => {
+    const el = cardRef.current;
+    if (!el) return;
+    const rect = el.getBoundingClientRect();
+    const px = (e.clientX - rect.left) / rect.width - 0.5;
+    const py = (e.clientY - rect.top) / rect.height - 0.5;
+    el.style.transform = `perspective(900px) rotateX(${(-py * 6).toFixed(2)}deg) rotateY(${(px * 6).toFixed(2)}deg) translateY(-3px)`;
+  };
+
+  const resetTilt = () => {
+    const el = cardRef.current;
+    if (el) el.style.transform = '';
+  };
 
   const commitRename = async () => {
     setRenaming(false);
@@ -58,9 +74,12 @@ function ProjectCard({
 
   return (
     <div
+      ref={cardRef}
       className="project-card"
       style={{ animationDelay: `${Math.min(index * 70, 500)}ms` }}
       onClick={onOpen}
+      onMouseMove={handleTilt}
+      onMouseLeave={resetTilt}
       role="button"
     >
       <div className="project-cover">

@@ -95,6 +95,25 @@
   transform: scale(1.06);
 }
 
+/* פרלקסה עדינה בגלילה — התמונה נעה לאט מהכרטיס (Chrome/Edge; אחרים מקבלים סטטי) */
+@supports (animation-timeline: view()) {
+  .day-cover {
+    scale: 1.18;
+    animation: cover-parallax linear both;
+    animation-timeline: view();
+    animation-range: entry 0% exit 100%;
+  }
+
+  @keyframes cover-parallax {
+    from {
+      translate: 0 -7%;
+    }
+    to {
+      translate: 0 7%;
+    }
+  }
+}
+
 .day-cover-overlay {
   position: absolute;
   inset: 0;
