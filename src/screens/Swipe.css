@@ -728,9 +728,19 @@
   transition: border-color var(--dur-fast) var(--ease);
 }
 
-/* לחצני ההחלטה בתחתית כל תמונה בהשוואה — מתחזקים במרחף */
+/* לחצני ההחלטה בתחתית כל תמונה בהשוואה — ממורכזים, לא מסתירים את הציון בצד */
 .stack-grid-item .gallery-actions {
   bottom: var(--space-2);
+  inset-inline-start: 0;
+  inset-inline-end: 0;
+  translate: 0 0;
+  justify-content: center;
+  gap: var(--space-2);
+  pointer-events: none;
+}
+
+.stack-grid-item .gallery-action {
+  pointer-events: auto;
 }
 
 .stack-grid-item:hover .gallery-actions {
