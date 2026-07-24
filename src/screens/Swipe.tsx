@@ -370,6 +370,10 @@ export function Swipe({ day, budgetTarget, onBack }: SwipeProps) {
   const next1 = stacks[index + 1];
   const next2 = stacks[index + 2];
 
+  // עמודות ברשת ההשוואה — לפי כמות התמונות בערימה: 2–4 → זוגות, 5–9 → שלוש, 10+ → ארבע
+  const stackCount = current?.photos.length ?? 0;
+  const stackCols = stackCount <= 4 ? 2 : stackCount <= 9 ? 3 : 4;
+
   const currentUrl = useObjectUrl(current?.cover.preview);
   const next1Url = useObjectUrl(next1?.cover.preview);
   const next2Url = useObjectUrl(next2?.cover.preview);
@@ -976,7 +980,10 @@ export function Swipe({ day, budgetTarget, onBack }: SwipeProps) {
         {expanded && (
           <div className="stack-overlay">
             <p className="stack-overlay-hint">{t.stackHint}</p>
-            <div className="stack-grid">
+            <div
+              className={`stack-grid${current.photos.length > stackCols * 2 ? ' stack-grid-scroll' : ''}`}
+              style={{ '--cols': stackCols } as React.CSSProperties}
+            >
               {[...current.photos]
                 .sort((a, b) => (b.bestShotScore ?? -1) - (a.bestShotScore ?? -1))
                 .map((photo) => (
