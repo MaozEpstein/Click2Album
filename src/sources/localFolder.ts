@@ -92,6 +92,25 @@ export async function pickLocalFolder(): Promise<PickedFolder | null> {
   });
 }
 
+/**
+ * בחירת תמונות מהגלריה: input תמונות רגיל (בלי webkitdirectory) —
+ * באנדרואיד/iOS נפתח בורר התמונות של המערכת (הגלריה), לא מנהל הקבצים.
+ */
+export async function pickGalleryPhotos(): Promise<PickedFolder | null> {
+  return new Promise((resolve) => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.multiple = true;
+    input.accept = 'image/*';
+    input.onchange = () => {
+      const files = input.files ? Array.from(input.files) : [];
+      resolve(files.length ? { source: new FileListSource(files), handle: null } : null);
+    };
+    input.oncancel = () => resolve(null);
+    input.click();
+  });
+}
+
 interface PermissionCapableHandle extends FileSystemDirectoryHandle {
   queryPermission(desc: { mode: string }): Promise<PermissionState>;
   requestPermission(desc: { mode: string }): Promise<PermissionState>;

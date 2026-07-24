@@ -3,6 +3,7 @@ export const he = {
   tagline: 'האלבום שלך, בקליק.',
   subTagline: 'בוחרים תמונות בכיף, האלבום נבנה לבד.',
   chooseFolder: 'בחר תיקיית תמונות',
+  chooseGallery: 'בחירה מהגלריה 🖼️',
   googleDrive: 'Google Drive',
   comingSoon: 'בקרוב',
   privacyNote: 'התמונות שלך נשארות אצלך — הכל מתבצע במכשיר, בלי העלאה לשרת.',

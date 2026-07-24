@@ -18,7 +18,7 @@ import {
 } from './lib/projects';
 import { resetDbConnection } from './lib/db';
 import { buildAlbum } from './lib/layoutEngine';
-import { pickLocalFolder } from './sources/localFolder';
+import { pickGalleryPhotos, pickLocalFolder } from './sources/localFolder';
 import { scanSource, type ScanProgress } from './lib/scan';
 import {
   clearProject,
@@ -302,12 +302,10 @@ export function App() {
     }
   }, []);
 
-  /** בחירת תיקייה לפרויקט חדש: יוצר פרויקט (שם = שם התיקייה) וסורק לתוכו */
-  const handlePickFolder = useCallback(async () => {
-    setError(null);
-    const picked = await pickLocalFolder();
-    if (!picked) return;
-
+  /** התחלת פרויקט מתוצאת בחירה (תיקייה או גלריה) */
+  const startProjectFromPicked = useCallback(async (
+    picked: NonNullable<Awaited<ReturnType<typeof pickLocalFolder>>>,
+  ) => {
     const folderName = picked.handle?.name?.trim();
     // פרויקט פעיל ריק (נוצר ולא נסרק) — ממוחזר במקום ליצור עוד אחד
     const activeId = getActiveProjectId();
@@ -326,6 +324,20 @@ export function App() {
     resetDbConnection(projectDbName(projectId));
     await runScan(picked);
   }, [runScan]);
+
+  /** בחירת תיקייה לפרויקט חדש */
+  const handlePickFolder = useCallback(async () => {
+    setError(null);
+    const picked = await pickLocalFolder();
+    if (picked) await startProjectFromPicked(picked);
+  }, [startProjectFromPicked]);
+
+  /** בחירה מהגלריה (בורר התמונות של המערכת — מובייל) */
+  const handlePickGallery = useCallback(async () => {
+    setError(null);
+    const picked = await pickGalleryPhotos();
+    if (picked) await startProjectFromPicked(picked);
+  }, [startProjectFromPicked]);
 
   /** סריקה מחדש של הפרויקט הנוכחי (דורס רק אותו) */
   const handleRescan = useCallback(async () => {
@@ -449,7 +461,13 @@ export function App() {
     case 'loading':
       return null;
     case 'welcome':
-      return <Welcome onPickFolder={handlePickFolder} error={error} />;
+      return (
+        <Welcome
+          onPickFolder={handlePickFolder}
+          onPickGallery={handlePickGallery}
+          error={error}
+        />
+      );
     case 'scanning':
       return <Scanning progress={screen.progress} />;
     case 'days':

@@ -4,10 +4,11 @@ import './Welcome.css';
 
 interface WelcomeProps {
   onPickFolder: () => void;
+  onPickGallery: () => void;
   error: string | null;
 }
 
-export function Welcome({ onPickFolder, error }: WelcomeProps) {
+export function Welcome({ onPickFolder, onPickGallery, error }: WelcomeProps) {
   const t = useT();
 
   return (
@@ -26,6 +27,9 @@ export function Welcome({ onPickFolder, error }: WelcomeProps) {
         <div className="welcome-actions">
           <button className="btn-primary" onClick={onPickFolder}>
             {t.chooseFolder}
+          </button>
+          <button className="btn-primary" onClick={onPickGallery}>
+            {t.chooseGallery}
           </button>
           <button className="btn-ghost" disabled>
             {t.googleDrive}
