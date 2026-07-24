@@ -1,10 +1,8 @@
 /** הגדרות האלבום — נשמרות ב-localStorage ומשפיעות על העימוד */
 
 export interface AlbumSettings {
-  /** הפרדת תמונות רקע (ללא אנשים) לסוף כל יום */
-  separateBackgrounds: boolean;
-  /** כמה תמונות רקע לכל יום; null = ללא הגבלה */
-  backgroundsPerDay: number | null;
+  /** נופים שנבחרו משמשים כרקעי עמודים (מתחת לתמונות האנשים) */
+  sceneryAsBackgrounds: boolean;
   /** יעד עמודים לאלבום; null = ללא תקציב */
   targetPages: number | null;
 }
@@ -18,8 +16,7 @@ function storageKey(): string {
 }
 
 const DEFAULTS: AlbumSettings = {
-  separateBackgrounds: true,
-  backgroundsPerDay: null,
+  sceneryAsBackgrounds: true,
   targetPages: null,
 };
 
@@ -39,5 +36,5 @@ export function saveSettings(settings: AlbumSettings): void {
 
 /** מזהה ייחודי של ההגדרות המשפיעות על העימוד — חלק מ-fingerprint האלבום */
 export function layoutSettingsKey(settings: AlbumSettings): string {
-  return `bg:${settings.separateBackgrounds ? 1 : 0}:${settings.backgroundsPerDay ?? 'all'}`;
+  return `scenery:${settings.sceneryAsBackgrounds ? 1 : 0}`;
 }

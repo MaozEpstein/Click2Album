@@ -241,15 +241,13 @@ export function removePhotoFromPage(
 }
 
 export interface BuildOptions {
-  /** הפרדת תמונות רקע (faceCount=0) לסוף כל יום */
-  separateBackgrounds?: boolean;
-  /** מגבלת תמונות רקע ליום; null/undefined = ללא הגבלה */
-  backgroundsPerDay?: number | null;
+  /** נופים שנבחרו הופכים לרקעי עמודים (מתחת לתמונות האנשים) */
+  sceneryAsBackgrounds?: boolean;
 }
 
 /** בונה את האלבום המלא מהתמונות שנבחרו (keep/favorite) */
 export function buildAlbum(allPhotos: PhotoRecord[], options: BuildOptions = {}): AlbumLayout {
-  const { separateBackgrounds = false, backgroundsPerDay = null } = options;
+  const { sceneryAsBackgrounds = false } = options;
   const selected = allPhotos.filter(
     (p) => p.decision === 'keep' || p.decision === 'favorite',
   );
@@ -261,23 +259,21 @@ export function buildAlbum(allPhotos: PhotoRecord[], options: BuildOptions = {})
     let photos = day.photos;
     if (photos.length === 0) continue;
 
-    // הפרדת רקעים: תמונות ללא אנשים יוצאות מהזרם הכרונולוגי ועוברות לסוף היום.
-    // תמונות שטרם סווגו (faceCount=null) נשארות בזרם הרגיל.
-    let backgrounds: PhotoRecord[] = [];
-    if (separateBackgrounds) {
-      backgrounds = photos.filter((p) => p.faceCount === 0);
-      photos = photos.filter((p) => p.faceCount !== 0);
-      if (backgroundsPerDay !== null) {
-        // עדיפות למועדפות, אחר כך כרונולוגי
-        backgrounds = [
-          ...backgrounds.filter((p) => p.decision === 'favorite'),
-          ...backgrounds.filter((p) => p.decision !== 'favorite'),
-        ].slice(0, backgroundsPerDay);
-      }
-      // אם היום כולו רקעים — הם הזרם הראשי
+    /**
+     * נופים כרקעים: נופים לא-מועדפים (0 דמויות) יוצאים מהזרם והופכים
+     * לבריכת רקעי עמודים. נוף מועדף (★) הוא רגע — נשאר בזרם ומקבל hero.
+     * תמונות שטרם נותחו נשארות בזרם הרגיל.
+     */
+    let backgroundPool: PhotoRecord[] = [];
+    if (sceneryAsBackgrounds) {
+      const isScenery = (p: PhotoRecord) =>
+        (p.personCount ?? p.faceCount) === 0 && p.decision !== 'favorite';
+      backgroundPool = photos.filter(isScenery);
+      photos = photos.filter((p) => !isScenery(p));
+      // אם היום כולו נופים — הם הזרם הראשי (אין את מי להניח עליהם)
       if (photos.length === 0) {
-        photos = backgrounds;
-        backgrounds = [];
+        photos = backgroundPool;
+        backgroundPool = [];
       }
     }
 
@@ -310,17 +306,38 @@ export function buildAlbum(allPhotos: PhotoRecord[], options: BuildOptions = {})
     const lastTemplate =
       pages.length > 0 ? getTemplate(pages[pages.length - 1].templateId) : null;
     const regularPages = partitionIntoPages(regular, lastTemplate);
+
+    // 4. שיוך רקעים: לכל עמוד — הנוף הקרוב כרונולוגית לתמונותיו
+    //    (הנוף שצולם באותו מעמד). כל נוף משמש רקע אחד לכל היותר.
+    const availableBg = [...backgroundPool];
     for (const page of regularPages) {
       page.dayKey = day.key;
+      if (availableBg.length > 0) {
+        const pageTime =
+          page.slots
+            .map((s) => day.photos.find((p) => p.id === s.photoId)?.takenAt ?? 0)
+            .reduce((a, v) => a + v, 0) / Math.max(1, page.slots.length);
+        let bestIdx = 0;
+        let bestGap = Infinity;
+        for (let i = 0; i < availableBg.length; i++) {
+          const gap = Math.abs((availableBg[i].takenAt ?? 0) - pageTime);
+          if (gap < bestGap) {
+            bestGap = gap;
+            bestIdx = i;
+          }
+        }
+        page.backgroundPhotoId = availableBg[bestIdx].id;
+        availableBg.splice(bestIdx, 1);
+      }
       pages.push(page);
     }
 
-    // 4. עמודי רקעים — בסוף היום, ממשיכים את אותו מנוע חלוקה
-    if (backgrounds.length > 0) {
+    // 5. נופים שלא שימשו כרקע — לא הולכים לאיבוד: עמודים רגילים בסוף היום
+    if (availableBg.length > 0) {
       const prevTemplate =
         pages.length > 0 ? getTemplate(pages[pages.length - 1].templateId) : null;
-      const backgroundPages = partitionIntoPages(backgrounds, prevTemplate);
-      for (const page of backgroundPages) {
+      const leftoverPages = partitionIntoPages(availableBg, prevTemplate);
+      for (const page of leftoverPages) {
         page.dayKey = day.key;
         page.id = `bg-${page.id}`;
         pages.push(page);

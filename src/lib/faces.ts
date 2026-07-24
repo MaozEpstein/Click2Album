@@ -1,5 +1,6 @@
 import { setFaceData, type PhotoRecord } from './db';
 import { embedAlignedFace } from './faceEngine';
+import { assetUrl } from './assetUrl';
 
 /**
  * ניתוח פנים היברידי:
@@ -9,11 +10,22 @@ import { embedAlignedFace } from './faceEngine';
 
 export type PhotoCategory = 'background' | 'person' | 'group';
 
-export function categoryOf(faceCount: number | null): PhotoCategory | null {
-  if (faceCount === null) return null;
-  if (faceCount === 0) return 'background';
-  if (faceCount === 1) return 'person';
+export function categoryOf(count: number | null): PhotoCategory | null {
+  if (count === null) return null;
+  if (count === 0) return 'background';
+  if (count === 1) return 'person';
   return 'group';
+}
+
+/**
+ * הקטגוריה האמינה של תמונה: לפי גלאי הדמויות (תופס גם גב/פרופיל/רחוק),
+ * עם נסיגה לספירת הפנים כשהדמויות טרם נותחו.
+ */
+export function categoryOfPhoto(photo: {
+  personCount: number | null;
+  faceCount: number | null;
+}): PhotoCategory | null {
+  return categoryOf(photo.personCount ?? photo.faceCount);
 }
 
 export interface FacesProgress {
@@ -99,8 +111,8 @@ export async function facesPending(
 
   try {
     const faceapi = await import('@vladmandic/face-api');
-    await faceapi.nets.tinyFaceDetector.loadFromUri('/face-models');
-    await faceapi.nets.faceLandmark68Net.loadFromUri('/face-models');
+    await faceapi.nets.tinyFaceDetector.loadFromUri(assetUrl('face-models'));
+    await faceapi.nets.faceLandmark68Net.loadFromUri(assetUrl('face-models'));
     const options = new faceapi.TinyFaceDetectorOptions({
       inputSize: 640,
       scoreThreshold: 0.55, // מסנן זיהויי-פנים מדומים (שיחים, אוכל, טקסטורות)

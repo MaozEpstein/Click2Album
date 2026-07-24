@@ -41,6 +41,7 @@ export function PageView({
   selectedSlot = null,
   onSlotClick,
   onRemovePhoto,
+  onRemoveBackground,
 }: {
   page: AlbumPage;
   photosById: Map<string, PhotoRecord>;
@@ -48,10 +49,29 @@ export function PageView({
   selectedSlot?: SlotRef | null;
   onSlotClick?: (ref: SlotRef) => void;
   onRemovePhoto?: (pageId: string, photoId: string) => void;
+  onRemoveBackground?: (pageId: string) => void;
 }) {
   const template = getTemplate(page.templateId);
+  const bgPhoto = page.backgroundPhotoId ? photosById.get(page.backgroundPhotoId) : undefined;
   return (
     <div className="album-page">
+      {bgPhoto && (
+        <div className="album-page-bg">
+          <SlotImage photo={bgPhoto} />
+          <div className="album-page-bg-veil" />
+        </div>
+      )}
+      {editMode && bgPhoto && onRemoveBackground && (
+        <button
+          className="album-bg-remove"
+          onClick={(e) => {
+            e.stopPropagation();
+            onRemoveBackground(page.id);
+          }}
+        >
+          ✕ רקע
+        </button>
+      )}
       {page.dayTitle && <div className="album-page-day-title">{page.dayTitle}</div>}
       {template.slots.map((slot, i) => {
         const photo = photosById.get(page.slots[i]?.photoId ?? '');
@@ -144,9 +164,7 @@ export function Album({ layout, photosById, onBack, onLayoutChange, onRebuild }:
 
   const applySettings = useCallback(
     (next: AlbumSettings) => {
-      const layoutChanged =
-        next.separateBackgrounds !== settings.separateBackgrounds ||
-        next.backgroundsPerDay !== settings.backgroundsPerDay;
+      const layoutChanged = next.sceneryAsBackgrounds !== settings.sceneryAsBackgrounds;
       setSettings(next);
       saveSettings(next);
       // בנייה מחדש רק כשההגדרה משפיעה על העימוד (תקציב לא דורס עריכות)
@@ -185,6 +203,17 @@ export function Album({ layout, photosById, onBack, onLayoutChange, onRebuild }:
       setSelectedSlot(null);
     },
     [layout, photosById, onLayoutChange, t],
+  );
+
+  const handleRemoveBackground = useCallback(
+    (pageId: string) => {
+      onLayoutChange({
+        pages: layout.pages.map((p) =>
+          p.id === pageId ? { ...p, backgroundPhotoId: undefined } : p,
+        ),
+      });
+    },
+    [layout, onLayoutChange],
   );
 
   const handleRebuildClick = useCallback(() => {
@@ -354,6 +383,7 @@ export function Album({ layout, photosById, onBack, onLayoutChange, onRebuild }:
               selectedSlot={selectedSlot}
               onSlotClick={handleSlotClick}
               onRemovePhoto={handleRemovePhoto}
+              onRemoveBackground={handleRemoveBackground}
             />
           ))}
           {!singlePageMode && visible.length === 2 && <div className="album-spine" />}
@@ -375,31 +405,13 @@ export function Album({ layout, photosById, onBack, onLayoutChange, onRebuild }:
           <label className="album-settings-row">
             <input
               type="checkbox"
-              checked={settings.separateBackgrounds}
+              checked={settings.sceneryAsBackgrounds}
               onChange={(e) =>
-                applySettings({ ...settings, separateBackgrounds: e.target.checked })
+                applySettings({ ...settings, sceneryAsBackgrounds: e.target.checked })
               }
             />
-            {t.settingsSeparateBg}
+            {t.settingsSceneryBg}
           </label>
-          {settings.separateBackgrounds && (
-            <label className="album-settings-row">
-              {t.settingsBgPerDay}
-              <input
-                type="number"
-                min={1}
-                max={40}
-                placeholder={t.settingsUnlimited}
-                value={settings.backgroundsPerDay ?? ''}
-                onChange={(e) =>
-                  applySettings({
-                    ...settings,
-                    backgroundsPerDay: e.target.value === '' ? null : Number(e.target.value),
-                  })
-                }
-              />
-            </label>
-          )}
           <label className="album-settings-row">
             {t.settingsTargetPages}
             <input

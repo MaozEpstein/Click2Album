@@ -156,10 +156,15 @@ function identityVerdict(
   return 'unknown';
 }
 
-/** וטו מספר פנים: נוף (0) מול אנשים (1+), או אדם (1) מול קבוצה גדולה (3+) */
+/**
+ * וטו מספר אנשים: נוף (0) מול אנשים (1+), או אדם (1) מול קבוצה גדולה (3+).
+ * לפי גלאי הדמויות (תופס גב/פרופיל), עם נסיגה לפנים כשטרם נותח.
+ */
 function faceCountVeto(a: PhotoRecord, b: PhotoRecord): boolean {
-  if (a.faceCount === null || b.faceCount === null) return false;
-  const [lo, hi] = a.faceCount <= b.faceCount ? [a.faceCount, b.faceCount] : [b.faceCount, a.faceCount];
+  const ca = a.personCount ?? a.faceCount;
+  const cb = b.personCount ?? b.faceCount;
+  if (ca === null || cb === null) return false;
+  const [lo, hi] = ca <= cb ? [ca, cb] : [cb, ca];
   if (lo === 0 && hi >= 1) return true;
   if (lo === 1 && hi >= 3) return true;
   return false;

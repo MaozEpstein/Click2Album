@@ -41,6 +41,10 @@ export interface PhotoRecord {
   hasClosedEyes: boolean;
   /** חתימת הנושא הבולט (נופים): null=טרם נבדק, []=אין נושא מובהק, אחרת חתימה */
   subjectSig: number[] | null;
+  /** מספר דמויות (COCO-SSD, כולל גב/פרופיל); null = טרם נותח */
+  personCount: number | null;
+  /** תיבות הדמויות (יחסי) — לחיתוך חכם עתידי */
+  personBoxes: { x: number; y: number; w: number; h: number }[];
 }
 
 /** מצב הפרויקט הפעיל — הבסיס לשמירה רציפה של התקדמות */
@@ -96,7 +100,7 @@ export function resetDbConnection(newDbName: string): void {
 }
 
 function getDB(): Promise<IDBPDatabase<Click2AlbumDB>> {
-  dbPromise ??= openDB<Click2AlbumDB>(dbName, 22, {
+  dbPromise ??= openDB<Click2AlbumDB>(dbName, 24, {
     upgrade(db, oldVersion, _newVersion, tx) {
       // עד גרסה 3 שינויי הסכימה דרשו סריקה מחדש; מגרסה 3 והלאה משמרים נתונים
       if (oldVersion < 3) {
@@ -112,7 +116,7 @@ function getDB(): Promise<IDBPDatabase<Click2AlbumDB>> {
       if (oldVersion < 5) {
         db.createObjectStore('album', { keyPath: 'id' });
       }
-      if (oldVersion >= 3 && oldVersion < 22) {
+      if (oldVersion >= 3 && oldVersion < 24) {
         // מיגרציה: רשומות קיימות מקבלות ערכי ברירת מחדל (בלי דגלים)
         tx.objectStore('photos')
           .openCursor()
@@ -139,6 +143,9 @@ function getDB(): Promise<IDBPDatabase<Click2AlbumDB>> {
             }
             // v22: חתימת נושא בולט — שדה חדש בלבד
             record.subjectSig ??= null;
+            // v24: גלאי דמויות משופר (preview + סף שטח מונמך) — ניתוח מחדש
+            record.personCount = null;
+            record.personBoxes = [];
             cursor.update(record);
             return cursor.continue().then(fill);
           });
@@ -186,6 +193,20 @@ export async function getSourceHandle(): Promise<FileSystemDirectoryHandle | nul
   const db = await getDB();
   const record = await db.get('source', 'current');
   return record?.handle ?? null;
+}
+
+/** שמירת תוצאת גלאי הדמויות */
+export async function setPersonData(
+  id: string,
+  personCount: number,
+  personBoxes: { x: number; y: number; w: number; h: number }[],
+): Promise<void> {
+  const db = await getDB();
+  const record = await db.get('photos', id);
+  if (!record) return;
+  record.personCount = personCount;
+  record.personBoxes = personBoxes;
+  await db.put('photos', record);
 }
 
 /** שמירת חתימת נושא בולט */

@@ -16,6 +16,8 @@ export interface AlbumPage {
   dayKey: string;
   /** כותרת תאריך בעברית — רק בעמוד פותח-יום */
   dayTitle?: string;
+  /** תמונת נוף כרקע העמוד (מוצגת מרוככת מתחת למשבצות) */
+  backgroundPhotoId?: string;
 }
 
 export interface AlbumLayout {

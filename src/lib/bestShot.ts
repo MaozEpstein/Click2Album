@@ -1,4 +1,5 @@
 import { setBestShot, type PhotoRecord } from './db';
+import { assetUrl } from './assetUrl';
 
 /**
  * ציון "המוצלחת ביותר" — לפי המפרט המאושר:
@@ -21,6 +22,8 @@ const SMILE_BONUS = 0.2;
 const BLINK_SCORE = 0.15;
 /** פנים קיימות אך קטנות משיפוט — רכיב פנים ניטרלי (לא עונש על צילום רחב) */
 const NEUTRAL_FACE_SCORE = 0.7;
+/** יש דמות אבל בלי פנים גלויות (גב/פרופיל) — מעט מתחת לניטרלי: פחות רצוי מחזיתית */
+const BACK_TO_CAMERA_SCORE = 0.6;
 /** פנים קטנות מזה (יחסית לגובה התמונה) לא נשפטות */
 const MIN_FACE_RATIO = 0.038; // ≈48px ב-1280
 /** חוק אמינות: המנצחת מחליפה את החדה-ביותר רק בהפרש הזה ומעלה */
@@ -33,6 +36,13 @@ export interface ScoreProgress {
 
 let running = false;
 
+/** סטטוס גלוי לאבחון — מוצג במסך בזמן פיתוח */
+export const scoreStatus = {
+  state: 'idle' as 'idle' | 'running' | 'done' | 'error',
+  scored: 0,
+  lastError: null as string | null,
+};
+
 const clamp01 = (v: number) => Math.max(0, Math.min(1, v));
 
 let nimaSessionPromise: Promise<{
@@ -43,7 +53,7 @@ let nimaSessionPromise: Promise<{
 function getNimaSession() {
   nimaSessionPromise ??= (async () => {
     const ort = await import('onnxruntime-web/wasm');
-    const session = await ort.InferenceSession.create('/models/nima_aesthetic.onnx', {
+    const session = await ort.InferenceSession.create(assetUrl('models/nima_aesthetic.onnx'), {
       executionProviders: ['wasm'],
     });
     return { ort: ort as typeof import('onnxruntime-web'), session };
@@ -89,9 +99,9 @@ let landmarkerPromise: Promise<import('@mediapipe/tasks-vision').FaceLandmarker>
 function getLandmarker() {
   landmarkerPromise ??= (async () => {
     const vision = await import('@mediapipe/tasks-vision');
-    const fileset = await vision.FilesetResolver.forVisionTasks('/mediapipe-wasm');
+    const fileset = await vision.FilesetResolver.forVisionTasks(assetUrl('mediapipe-wasm'));
     return vision.FaceLandmarker.createFromOptions(fileset, {
-      baseOptions: { modelAssetPath: '/models/face_landmarker.task' },
+      baseOptions: { modelAssetPath: assetUrl('models/face_landmarker.task') },
       runningMode: 'IMAGE',
       numFaces: 6,
       outputFaceBlendshapes: true,
@@ -178,6 +188,7 @@ export async function scorePending(
   const pending = photos.filter((p) => p.bestShotScore === null && !p.filtered);
   if (pending.length === 0) return;
   running = true;
+  scoreStatus.state = 'running';
 
   try {
     let done = 0;
@@ -194,21 +205,29 @@ export async function scorePending(
 
         const sharp = clamp01(Math.log(Math.max(1, photo.sharpness)) / SHARPNESS_LOG_CAP);
 
+        // אין פנים נשפטות אבל הגלאי מצא דמות (גב/פרופיל) — רכיב אדם מופחת
+        const faceComponent =
+          faces.score ??
+          ((photo.personCount ?? 0) > 0 ? BACK_TO_CAMERA_SCORE : null);
+
         const score =
-          faces.score !== null
-            ? 40 * aesthetic + 40 * faces.score + 20 * sharp
+          faceComponent !== null
+            ? 40 * aesthetic + 40 * faceComponent + 20 * sharp
             : 65 * aesthetic + 35 * sharp;
 
         photo.bestShotScore = Math.round(score * 10) / 10;
         photo.hasClosedEyes = faces.hasClosedEyes;
         await setBestShot(photo.id, photo.bestShotScore, faces.hasClosedEyes);
+        scoreStatus.scored += 1;
       } catch (err) {
+        scoreStatus.lastError = String(err).slice(0, 300);
         console.warn('[bestShot] scoring failed for', photo.name, err);
       }
       done += 1;
       onProgress({ done, total: pending.length });
       if (done % 3 === 0) await new Promise((r) => setTimeout(r, 0));
     }
+    scoreStatus.state = scoreStatus.lastError && scoreStatus.scored === 0 ? 'error' : 'done';
   } finally {
     running = false;
   }

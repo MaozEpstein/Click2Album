@@ -36,6 +36,7 @@ import { facesPending } from './lib/faces';
 import { embedPending } from './lib/embed';
 import { scorePending } from './lib/bestShot';
 import { subjectPending } from './lib/subject';
+import { personsPending } from './lib/persons';
 import { hasTemplate } from './lib/templates';
 import { computeDayTargets } from './lib/budget';
 import { t } from './i18n';
@@ -71,8 +72,7 @@ function albumFingerprint(photos: PhotoRecord[]): string {
 function buildAlbumWithSettings(photos: PhotoRecord[]): AlbumLayout {
   const settings = getSettings();
   return buildAlbum(visibleOf(photos), {
-    separateBackgrounds: settings.separateBackgrounds,
-    backgroundsPerDay: settings.backgroundsPerDay,
+    sceneryAsBackgrounds: settings.sceneryAsBackgrounds,
   });
 }
 
@@ -81,11 +81,13 @@ export function App() {
   const [error, setError] = useState<string | null>(null);
   /** מצב שרשרת הניתוח האחודה — אחוז רציף + שלב + הערכת זמן */
   const [analysis, setAnalysis] = useState<{
-    stage: 'classify' | 'embed' | 'score' | 'subject';
+    stage: 'classify' | 'persons' | 'embed' | 'score' | 'subject';
     percent: number;
     etaSeconds: number | null;
   } | null>(null);
   const chainRef = useRef({ running: false, id: 0 });
+  /** חתימת הריצה האחרונה שהסתיימה — מונע לולאה אינסופית על תמונות שנכשלות תמיד */
+  const lastChainSignatureRef = useRef<string | null>(null);
   const introShownRef = useRef(false);
   const [introOpen, setIntroOpen] = useState(false);
   const [doneOpen, setDoneOpen] = useState(false);
@@ -101,14 +103,20 @@ export function App() {
     if (chainRef.current.running) return;
 
     const pendingClassify = visible.filter((p) => p.faceCount === null).length;
+    const pendingPersons = visible.filter((p) => p.personCount === null).length;
     const pendingEmbed = visible.filter((p) => p.embedding === null).length;
     const pendingScore = visible.filter((p) => p.bestShotScore === null).length;
-    // הערכה עליונה — כמות הנושאים הסופית ידועה רק אחרי סיווג הפנים
+    // הערכה עליונה — כמות הנושאים הסופית ידועה רק אחרי גלאי הדמויות
     const pendingSubject = visible.filter(
-      (p) => p.subjectSig === null && (p.faceCount === 0 || p.faceCount === null),
+      (p) => p.subjectSig === null && ((p.personCount ?? p.faceCount) === 0 || (p.personCount ?? p.faceCount) === null),
     ).length;
-    const totalOps = pendingClassify + pendingEmbed + pendingScore + pendingSubject;
+    const totalOps =
+      pendingClassify + pendingPersons + pendingEmbed + pendingScore + pendingSubject;
     if (totalOps === 0) return;
+
+    // אם הריצה הקודמת הסתיימה בלי שום התקדמות (כשלים קבועים) — לא מנסים שוב לבד
+    const signature = `${pendingClassify}:${pendingPersons}:${pendingEmbed}:${pendingScore}:${pendingSubject}`;
+    if (signature === lastChainSignatureRef.current) return;
 
     chainRef.current = { running: true, id: chainRef.current.id + 1 };
     const runId = chainRef.current.id;
@@ -116,7 +124,7 @@ export function App() {
     let baseOps = 0;
 
     const report =
-      (stage: 'classify' | 'embed' | 'score' | 'subject') =>
+      (stage: 'classify' | 'persons' | 'embed' | 'score' | 'subject') =>
       (p: { done: number; total: number }) => {
         if (chainRef.current.id !== runId) return; // ריצה ישנה — לא מדווחת
         const doneOps = baseOps + p.done;
@@ -130,8 +138,18 @@ export function App() {
       };
 
     (async () => {
+      // תווית פתיחה = השלב הראשון שבאמת יש לו עבודה
+      const firstStage = pendingClassify
+        ? 'classify'
+        : pendingPersons
+          ? 'persons'
+          : pendingEmbed
+            ? 'embed'
+            : pendingScore
+              ? 'score'
+              : 'subject';
       setAnalysis({
-        stage: 'classify',
+        stage: firstStage,
         percent: 0,
         etaSeconds: Math.round(totalOps * ROUGH_SECONDS_PER_OP),
       });
@@ -142,6 +160,12 @@ export function App() {
           // הסטטוס נרשם ב-faceStatus; ממשיכים לשלב הבא
         }
         baseOps = pendingClassify;
+        try {
+          await personsPending(visible, report('persons'));
+        } catch {
+          // הסטטוס נרשם ב-personStatus; ממשיכים
+        }
+        baseOps += pendingPersons;
         await embedPending(visible, report('embed'));
         baseOps += pendingEmbed;
         await scorePending(visible, report('score'));
@@ -151,8 +175,22 @@ export function App() {
         chainRef.current.running = false;
         if (chainRef.current.id === runId) {
           setAnalysis(null);
-          // הודעת סיום — רק אחרי ריצה משמעותית (לא על השלמות זעירות)
-          if (totalOps >= 10) setDoneOpen(true);
+          // חתימת "אחרי": אם כלום לא התקדם — הריצה הבאה תדע לא לנסות שוב
+          const after = visibleOf(screen.photos);
+          lastChainSignatureRef.current = [
+            after.filter((p) => p.faceCount === null).length,
+            after.filter((p) => p.personCount === null).length,
+            after.filter((p) => p.embedding === null).length,
+            after.filter((p) => p.bestShotScore === null).length,
+            after.filter(
+              (p) =>
+                p.subjectSig === null &&
+                ((p.personCount ?? p.faceCount) === 0 ||
+                  (p.personCount ?? p.faceCount) === null),
+            ).length,
+          ].join(':');
+          // הודעת סיום — רק אחרי ריצה משמעותית שבאמת התקדמה
+          if (totalOps >= 10 && lastChainSignatureRef.current !== signature) setDoneOpen(true);
         }
       }
     })();
@@ -198,7 +236,7 @@ export function App() {
     const best = (pool: PhotoRecord[]) =>
       pool.length > 0 ? pool.reduce((b, p) => (coverRank(p) > coverRank(b) ? p : b)) : null;
 
-    const landscapes = photos.filter((p) => p.faceCount === 0);
+    const landscapes = photos.filter((p) => (p.personCount ?? p.faceCount) === 0);
     const pick =
       best(landscapes.filter((p) => p.decision === 'favorite')) ??
       best(landscapes.filter((p) => p.decision === 'keep')) ??
@@ -361,6 +399,7 @@ export function App() {
   // חיווי ניתוח רקע אחוד — אחוז רציף שרק עולה + שלב + זמן משוער
   const stageLabels = {
     classify: t.stageClassify,
+    persons: t.stagePersons,
     embed: t.stageEmbed,
     score: t.stageScore,
     subject: t.stageSubject,

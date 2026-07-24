@@ -3,6 +3,7 @@ import { useT } from '../i18n';
 import { useObjectUrl } from '../lib/useObjectUrl';
 import { getSettings } from '../lib/settings';
 import { faceStatus } from '../lib/faces';
+import { scoreStatus } from '../lib/bestShot';
 import { computeDayTargets } from '../lib/budget';
 import type { PhotoRecord } from '../lib/db';
 import { groupByDay, formatDayTitle, type DayGroup } from '../lib/days';
@@ -124,6 +125,8 @@ export function Days({
               faces: {faceStatus.state} · analyzed {faceStatus.processed} · with-id{' '}
               {faceStatus.withSigs}
               {faceStatus.lastError ? ` · ERR: ${faceStatus.lastError}` : ''}
+              {' | '}score: {scoreStatus.state} · scored {scoreStatus.scored}
+              {scoreStatus.lastError ? ` · ERR: ${scoreStatus.lastError}` : ''}
             </p>
           )}
         </div>

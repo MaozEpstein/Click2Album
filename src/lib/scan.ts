@@ -140,6 +140,8 @@ export async function scanSource(
       bestShotScore: null,
       hasClosedEyes: false,
       subjectSig: null,
+      personCount: null,
+      personBoxes: [],
     };
     await savePhoto(record);
 

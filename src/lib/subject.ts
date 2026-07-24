@@ -1,5 +1,6 @@
 import { setSubjectSig, type PhotoRecord } from './db';
 import { embedImageData } from './embed';
+import { assetUrl } from './assetUrl';
 
 /**
  * חתימת הנושא הבולט — לנופים בלבד (faceCount === 0):
@@ -34,7 +35,7 @@ let saliencyPromise: Promise<{
 function getSaliencySession() {
   saliencyPromise ??= (async () => {
     const ort = await import('onnxruntime-web/wasm');
-    const session = await ort.InferenceSession.create('/models/u2netp.onnx', {
+    const session = await ort.InferenceSession.create(assetUrl('models/u2netp.onnx'), {
       executionProviders: ['wasm'],
     });
     return { ort: ort as typeof import('onnxruntime-web'), session };
@@ -130,8 +131,9 @@ export async function subjectPending(
   onProgress: (progress: SubjectProgress) => void,
 ): Promise<void> {
   if (running) return;
+  // נוף אמיתי = אפס דמויות (הגלאי החדש); נסיגה לפנים כשהדמויות טרם נותחו
   const pending = photos.filter(
-    (p) => p.subjectSig === null && p.faceCount === 0 && !p.filtered,
+    (p) => p.subjectSig === null && (p.personCount ?? p.faceCount) === 0 && !p.filtered,
   );
   if (pending.length === 0) return;
   running = true;

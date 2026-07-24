@@ -7,6 +7,7 @@
  */
 
 import type * as OrtTypes from 'onnxruntime-web';
+import { assetUrl } from './assetUrl';
 // קובצי הריצה של ONNX — עותקים מקומיים שנארזים על ידי Vite (עובד זהה בפיתוח ובפרסום)
 import ortWasmUrl from '../assets/ort/ort-wasm-simd-threaded.wasm?url';
 import ortMjsUrl from '../assets/ort/ort-wasm-simd-threaded.mjs?url';
@@ -33,7 +34,7 @@ function getSession() {
     const ort = await import('onnxruntime-web/wasm');
     ort.env.wasm.wasmPaths = { wasm: ortWasmUrl, mjs: ortMjsUrl };
     ort.env.wasm.numThreads = 1;
-    const session = await ort.InferenceSession.create('/models/w600k_mbf.onnx', {
+    const session = await ort.InferenceSession.create(assetUrl('models/w600k_mbf.onnx'), {
       executionProviders: ['wasm'],
     });
     return { ort, session };

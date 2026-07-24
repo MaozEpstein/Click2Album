@@ -99,6 +99,7 @@ export const he = {
   subjectAnalyzing: (done: number, total: number) => `מזהה נושאים בנופים… ${done}/${total}`,
 
   stageClassify: 'מזהה אנשים ונופים',
+  stagePersons: 'מזהה דמויות',
   stageEmbed: 'מנתח דמיון',
   stageScore: 'מדרג תמונות',
   stageSubject: 'מזהה נושאים',
@@ -121,9 +122,7 @@ export const he = {
   categoryGroup: 'קבוצה',
 
   settingsTitle: 'הגדרות אלבום',
-  settingsSeparateBg: 'רקעים בסוף כל יום',
-  settingsBgPerDay: 'תמונות רקע ליום',
-  settingsUnlimited: 'ללא הגבלה',
+  settingsSceneryBg: 'נופים כרקעי עמודים',
   settingsRebuildNote: 'שינוי הגדרות בונה את האלבום מחדש',
   settingsTargetPages: 'יעד עמודים לאלבום',
 

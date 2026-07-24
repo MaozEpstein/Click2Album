@@ -3,7 +3,7 @@ import { useT } from '../i18n';
 import { setDecision, type Decision, type PhotoRecord } from '../lib/db';
 import { formatDayTitle, type DayGroup } from '../lib/days';
 import { buildStacks, getPersonClusters, type PhotoStack } from '../lib/stacks';
-import { categoryOf, type PhotoCategory } from '../lib/faces';
+import { categoryOfPhoto, type PhotoCategory } from '../lib/faces';
 import { useObjectUrl } from '../lib/useObjectUrl';
 import './Swipe.css';
 
@@ -286,12 +286,12 @@ export function Swipe({ day, budgetTarget, onBack }: SwipeProps) {
   const stacks = useMemo(() => {
     let result: PhotoStack[];
     if (category !== 'all') {
-      result = allStacks.filter((s) => categoryOf(s.cover.faceCount) === category);
+      result = allStacks.filter((s) => categoryOfPhoto(s.cover) === category);
     } else {
       // "הכל": קודם כל התמונות עם אנשים (כרונולוגי), ואז תמונות הנוף (כרונולוגי)
-      const people = allStacks.filter((s) => categoryOf(s.cover.faceCount) !== 'background');
+      const people = allStacks.filter((s) => categoryOfPhoto(s.cover) !== 'background');
       const backgrounds = allStacks.filter(
-        (s) => categoryOf(s.cover.faceCount) === 'background',
+        (s) => categoryOfPhoto(s.cover) === 'background',
       );
       result = [...people, ...backgrounds];
     }
@@ -302,7 +302,7 @@ export function Swipe({ day, budgetTarget, onBack }: SwipeProps) {
   const categoryCounts = useMemo(() => {
     const counts: Record<PhotoCategory, number> = { background: 0, person: 0, group: 0 };
     for (const s of allStacks) {
-      const c = categoryOf(s.cover.faceCount);
+      const c = categoryOfPhoto(s.cover);
       if (c) counts[c] += 1;
     }
     return counts;
@@ -518,7 +518,7 @@ export function Swipe({ day, budgetTarget, onBack }: SwipeProps) {
   }, [allStacks]);
 
   const galleryPhotos = day.photos.filter((p) => {
-    if (galleryCategory !== 'all' && categoryOf(p.faceCount) !== galleryCategory) return false;
+    if (galleryCategory !== 'all' && categoryOfPhoto(p) !== galleryCategory) return false;
     if (galleryFilter === 'kept') return p.decision === 'keep' || p.decision === 'favorite';
     if (galleryFilter === 'rejected') return p.decision === 'reject';
     if (galleryFilter === 'undecided') return p.decision === null;
@@ -693,7 +693,7 @@ export function Swipe({ day, budgetTarget, onBack }: SwipeProps) {
     const pendingCategories = (['person', 'group', 'background'] as PhotoCategory[]).filter(
       (c) =>
         c !== category &&
-        allStacks.some((s) => categoryOf(s.cover.faceCount) === c && !isStackDecided(s)),
+        allStacks.some((s) => categoryOfPhoto(s.cover) === c && !isStackDecided(s)),
     );
     const isCategoryFinish = category !== 'all' && pendingCategories.length > 0;
 

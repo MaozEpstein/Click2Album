@@ -114,7 +114,32 @@ export async function exportAlbumToPdf(
 
     const template = getTemplate(albumPage.templateId);
     const page = doc.addPage([PAGE_SIZE_PT, PAGE_SIZE_PT]);
-    // רקע נייר לבן מגיע כברירת מחדל של PDF — אין צורך לצייר
+
+    // רקע עמוד: נוף מרוכך בצעיף נייר (זהה לתצוגה)
+    const bgPhoto = albumPage.backgroundPhotoId
+      ? photosById.get(albumPage.backgroundPhotoId)
+      : undefined;
+    if (bgPhoto) {
+      let bgSource: Blob | null = null;
+      if (sourceRoot) bgSource = await getOriginalFile(sourceRoot, bgPhoto.id);
+      if (!bgSource) {
+        bgSource = bgPhoto.preview;
+        usedFallback = true;
+      }
+      const bgJpeg = await renderSlotJpeg(bgSource, 1);
+      if (bgJpeg) {
+        const bgImage = await doc.embedJpg(bgJpeg);
+        page.drawImage(bgImage, { x: 0, y: 0, width: PAGE_SIZE_PT, height: PAGE_SIZE_PT });
+        page.drawRectangle({
+          x: 0,
+          y: 0,
+          width: PAGE_SIZE_PT,
+          height: PAGE_SIZE_PT,
+          color: rgb(0.969, 0.957, 0.933), // גוון הנייר
+          opacity: 0.55,
+        });
+      }
+    }
 
     for (let slotIndex = 0; slotIndex < template.slots.length; slotIndex++) {
       const slot = template.slots[slotIndex];
@@ -141,13 +166,23 @@ export async function exportAlbumToPdf(
       if (!jpegBytes) continue;
 
       const image = await doc.embedJpg(jpegBytes);
-      page.drawImage(image, {
-        x: slot.x * PAGE_SIZE_PT,
-        // מערכת הצירים של PDF מתחילה מלמטה
-        y: (1 - slot.y - slot.h) * PAGE_SIZE_PT,
-        width: slot.w * PAGE_SIZE_PT,
-        height: slot.h * PAGE_SIZE_PT,
-      });
+      const sx = slot.x * PAGE_SIZE_PT;
+      // מערכת הצירים של PDF מתחילה מלמטה
+      const sy = (1 - slot.y - slot.h) * PAGE_SIZE_PT;
+      const sw = slot.w * PAGE_SIZE_PT;
+      const sh = slot.h * PAGE_SIZE_PT;
+      // מעל רקע נוף — מסגרת לבנה סביב התמונה (תחושת תמונה מונחת, כמו בתצוגה)
+      if (bgPhoto) {
+        const FRAME = 3;
+        page.drawRectangle({
+          x: sx - FRAME,
+          y: sy - FRAME,
+          width: sw + 2 * FRAME,
+          height: sh + 2 * FRAME,
+          color: rgb(1, 1, 1),
+        });
+      }
+      page.drawImage(image, { x: sx, y: sy, width: sw, height: sh });
     }
 
     // כותרת תאריך בעמוד פותח-יום — פס כהה שקוף בתחתית + טקסט לבן (כמו במסך)
