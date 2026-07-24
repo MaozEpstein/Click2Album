@@ -265,6 +265,34 @@ function Lightbox({
   );
 }
 
+/** מעבר חלק (View Transitions) כשנתמך; אחרת עדכון רגיל */
+function withViewTransition(update: () => void): void {
+  const doc = document as Document & { startViewTransition?: (cb: () => void) => void };
+  if (doc.startViewTransition) doc.startViewTransition(update);
+  else update();
+}
+
+/** קונפטי עדין לסיום יום — פתיתים דטרמיניסטיים (בלי random ברינדור) */
+function Confetti() {
+  const COLORS = ['#7c6cf6', '#c86cf6', '#f66cb1', '#fbbf24', '#4ade80'];
+  return (
+    <div className="confetti" aria-hidden>
+      {Array.from({ length: 18 }, (_, i) => (
+        <span
+          key={i}
+          className="confetti-piece"
+          style={{
+            insetInlineStart: `${(i * 53) % 100}%`,
+            background: COLORS[i % COLORS.length],
+            animationDelay: `${(i % 6) * 90}ms`,
+            transform: `rotate(${(i * 47) % 360}deg)`,
+          }}
+        />
+      ))}
+    </div>
+  );
+}
+
 const DRAG_THRESHOLD = 110;
 
 /** מחליט האם ערימה כולה כבר הוכרעה */
@@ -601,7 +629,7 @@ export function Swipe({ day, budgetTarget, onBack }: SwipeProps) {
             selectMode={selectMode}
             selected={selectedGalleryIds.has(photo.id)}
             onToggleSelect={() => toggleGallerySelect(photo.id)}
-            onOpen={() => setLightboxIndex(i)}
+            onOpen={() => withViewTransition(() => setLightboxIndex(i))}
             onDecide={(decision) => decideGallery(photo, decision)}
           />
         ))}
@@ -705,6 +733,7 @@ export function Swipe({ day, budgetTarget, onBack }: SwipeProps) {
 
     return (
       <div className="screen swipe-complete">
+        {!isCategoryFinish && <Confetti />}
         <div className="swipe-complete-card">
           <div className="swipe-complete-emoji" aria-hidden>🎉</div>
           <h1 className="swipe-complete-title">
@@ -773,6 +802,10 @@ export function Swipe({ day, budgetTarget, onBack }: SwipeProps) {
       ? Math.min(1, Math.max(0, -drag.dy) / DRAG_THRESHOLD)
       : 0;
 
+  // צל פיזיקלי: ככל שגוררים — הקלף "מתרומם", הצל גדל ומוסט הפוך לכיוון הגרירה
+  const dragDist = Math.hypot(drag.dx, drag.dy);
+  const liftShadow = `${-drag.dx * 0.06}px ${14 + dragDist * 0.06}px ${34 + dragDist * 0.18}px rgba(0, 0, 0, ${Math.min(0.55, 0.35 + dragDist * 0.0009)})`;
+
   const cardStyle: React.CSSProperties = flyOut
     ? {
         transform:
@@ -783,7 +816,10 @@ export function Swipe({ day, budgetTarget, onBack }: SwipeProps) {
       }
     : {
         transform: `translate(${drag.dx}px, ${drag.dy}px) rotate(${rotation}deg)`,
-        transition: drag.dragging ? 'none' : 'transform 350ms cubic-bezier(0.22, 1.4, 0.36, 1)',
+        boxShadow: drag.dragging ? liftShadow : undefined,
+        transition: drag.dragging
+          ? 'none'
+          : 'transform 350ms cubic-bezier(0.22, 1.4, 0.36, 1), box-shadow 350ms ease',
       };
 
   return (

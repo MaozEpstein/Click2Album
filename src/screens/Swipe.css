@@ -454,6 +454,39 @@
   font-size: 1.1rem;
 }
 
+/* ===== קונפטי סיום יום — נפילה עדינה חד-פעמית ===== */
+
+.confetti {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+  z-index: 5;
+}
+
+.confetti-piece {
+  position: absolute;
+  top: -16px;
+  width: 9px;
+  height: 14px;
+  border-radius: 2px;
+  opacity: 0;
+  animation: confetti-fall 1.6s ease-in both;
+}
+
+@keyframes confetti-fall {
+  0% {
+    opacity: 1;
+    translate: 0 0;
+    rotate: 0deg;
+  }
+  100% {
+    opacity: 0;
+    translate: 24px 105vh;
+    rotate: 540deg;
+  }
+}
+
 /* ===== Lightbox — תצוגה גדולה מהגלריה ===== */
 
 .lightbox {

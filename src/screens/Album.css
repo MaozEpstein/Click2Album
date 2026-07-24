@@ -74,33 +74,48 @@
   height: min(calc(100dvh - 260px), 80vw);
 }
 
+/* היפוך דף: העמוד הנכנס מסתובב קלות סביב ציר השדרה — תחושת דף אמיתי */
+.album-stage {
+  perspective: 1400px;
+}
+
 .slide-next {
-  animation: slide-in-next var(--dur-med) var(--ease) both;
+  animation: page-flip-next 0.45s var(--ease) both;
+  transform-origin: right center;
 }
 
 .slide-prev {
-  animation: slide-in-prev var(--dur-med) var(--ease) both;
+  animation: page-flip-prev 0.45s var(--ease) both;
+  transform-origin: left center;
 }
 
-@keyframes slide-in-next {
-  from {
+@keyframes page-flip-next {
+  0% {
     opacity: 0;
-    transform: translateX(-28px);
+    transform: rotateY(-14deg) translateX(-24px);
+    box-shadow: -30px 24px 60px rgba(0, 0, 0, 0.5);
   }
-  to {
+  100% {
     opacity: 1;
-    transform: translateX(0);
+    transform: rotateY(0) translateX(0);
+    box-shadow:
+      0 24px 60px rgba(0, 0, 0, 0.45),
+      0 4px 12px rgba(0, 0, 0, 0.3);
   }
 }
 
-@keyframes slide-in-prev {
-  from {
+@keyframes page-flip-prev {
+  0% {
     opacity: 0;
-    transform: translateX(28px);
+    transform: rotateY(14deg) translateX(24px);
+    box-shadow: 30px 24px 60px rgba(0, 0, 0, 0.5);
   }
-  to {
+  100% {
     opacity: 1;
-    transform: translateX(0);
+    transform: rotateY(0) translateX(0);
+    box-shadow:
+      0 24px 60px rgba(0, 0, 0, 0.45),
+      0 4px 12px rgba(0, 0, 0, 0.3);
   }
 }
 
