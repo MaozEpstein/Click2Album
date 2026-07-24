@@ -724,7 +724,17 @@
   border: 3px solid var(--border);
   background: var(--bg-elevated);
   overflow: hidden;
+  cursor: pointer;
   transition: border-color var(--dur-fast) var(--ease);
+}
+
+/* לחצני ההחלטה בתחתית כל תמונה בהשוואה — מתחזקים במרחף */
+.stack-grid-item .gallery-actions {
+  bottom: var(--space-2);
+}
+
+.stack-grid-item:hover .gallery-actions {
+  opacity: 1;
 }
 
 .stack-grid-item img {

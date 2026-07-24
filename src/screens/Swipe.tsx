@@ -35,19 +35,22 @@ function StackGridItem({
   selected,
   recommended,
   onToggle,
+  onDecide,
 }: {
   photo: PhotoRecord;
   selected: boolean;
   recommended: boolean;
   onToggle: () => void;
+  onDecide: (decision: Decision) => void;
 }) {
   const t = useT();
   // preview מלא (1280px) — השוואה בין דומות דורשת פרטים, לא ממוזערת
   const url = useObjectUrl(photo.preview);
   return (
-    <button
+    <div
       className={`stack-grid-item${selected ? ' stack-grid-item-selected' : ''}`}
       onClick={onToggle}
+      role="button"
     >
       {url && <img src={url} alt={photo.name} loading="lazy" />}
       {recommended && <span className="stack-recommended">{t.recommended}</span>}
@@ -58,28 +61,62 @@ function StackGridItem({
         </span>
       )}
       <span className="stack-grid-check">{selected ? '✓' : ''}</span>
-    </button>
+      {photo.decision === 'favorite' && (
+        <span className="gallery-badge gallery-badge-favorite">★</span>
+      )}
+      <CompareActions onDecide={onDecide} />
+    </div>
   );
 }
 
-/** תמונה במסך השוואת קבוצה מהגלריה — צפייה בלבד, עם סימון התמונה שנבחרה */
+/** שורת לחצני החלטה מהירים — משותפת לתאי ההשוואה */
+function CompareActions({ onDecide }: { onDecide: (decision: Decision) => void }) {
+  return (
+    <div className="gallery-actions">
+      {(
+        [
+          ['keep', '✓'],
+          ['favorite', '★'],
+          ['reject', '✕'],
+        ] as const
+      ).map(([decision, icon]) => (
+        <button
+          key={decision}
+          className={`gallery-action gallery-action-${decision === 'favorite' ? 'fav' : decision}`}
+          onClick={(e) => {
+            e.stopPropagation();
+            onDecide(decision);
+          }}
+          aria-label={icon}
+        >
+          {icon}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+/** תמונה במסך השוואת קבוצה מהגלריה — עם סימון התמונה שנבחרה ולחצני החלטה */
 function CompareGridItem({
   photo,
   focus,
   recommended,
   onOpen,
+  onDecide,
 }: {
   photo: PhotoRecord;
   focus: boolean;
   recommended: boolean;
   onOpen: () => void;
+  onDecide: (decision: Decision) => void;
 }) {
   const t = useT();
   const url = useObjectUrl(photo.preview);
   return (
-    <button
+    <div
       className={`stack-grid-item${focus ? ' stack-grid-item-focus' : ''}`}
       onClick={onOpen}
+      role="button"
     >
       {url && <img src={url} alt={photo.name} loading="lazy" />}
       {focus && <span className="stack-focus-label">{t.compareSelected}</span>}
@@ -89,7 +126,8 @@ function CompareGridItem({
           {photo.decision === 'keep' ? '✓' : photo.decision === 'favorite' ? '★' : '✕'}
         </span>
       )}
-    </button>
+      <CompareActions onDecide={onDecide} />
+    </div>
   );
 }
 
@@ -459,7 +497,12 @@ export function Swipe({ day, budgetTarget, onBack }: SwipeProps) {
     setExpanded(false);
     setFlyOut(selectedIds.size > 0 ? 'keep' : 'reject');
     for (const photo of current.photos) {
-      const decision: Decision = selectedIds.has(photo.id) ? 'keep' : 'reject';
+      // מי שסומן ★ בהרחבה נשאר מועדף — האישור לא מוריד אותו ל"רוצה"
+      const decision: Decision = selectedIds.has(photo.id)
+        ? photo.decision === 'favorite'
+          ? 'favorite'
+          : 'keep'
+        : 'reject';
       photo.decision = decision;
       await setDecision(photo.id, decision);
     }
@@ -493,6 +536,18 @@ export function Swipe({ day, budgetTarget, onBack }: SwipeProps) {
       return next;
     });
   };
+
+  /** החלטה ישירה על תמונה מתוך ההרחבה — נשמרת מיד ומסנכרנת את הבחירה */
+  const decideInStack = useCallback(async (photo: PhotoRecord, decision: Decision) => {
+    photo.decision = decision;
+    await setDecision(photo.id, decision);
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (decision === 'reject') next.delete(photo.id);
+      else next.add(photo.id);
+      return next;
+    });
+  }, []);
 
   const [selectMode, setSelectMode] = useState(false);
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
@@ -708,6 +763,7 @@ export function Swipe({ day, budgetTarget, onBack }: SwipeProps) {
                   photo={photo}
                   focus={photo.id === compareStack.focusId}
                   recommended={photo.id === compareStack.stack.cover.id}
+                  onDecide={(decision) => decideGallery(photo, decision)}
                   onOpen={() => {
                     const gi = galleryPhotos.findIndex((p) => p.id === photo.id);
                     if (gi >= 0) {
@@ -1081,6 +1137,7 @@ export function Swipe({ day, budgetTarget, onBack }: SwipeProps) {
                     selected={selectedIds.has(photo.id)}
                     recommended={photo.id === current.cover.id}
                     onToggle={() => toggleSelected(photo.id)}
+                    onDecide={(decision) => decideInStack(photo, decision)}
                   />
                 ))}
             </div>
