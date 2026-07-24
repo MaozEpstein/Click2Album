@@ -17,7 +17,7 @@ export function Welcome({ onPickFolder, error }: WelcomeProps) {
       </div>
       <div className="welcome-content">
         <div className="welcome-logo" aria-hidden>
-          📸
+          📖✨
         </div>
         <h1 className="welcome-title">{t.appName}</h1>
         <p className="welcome-tagline">{t.tagline}</p>
