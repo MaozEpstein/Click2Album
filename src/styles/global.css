@@ -41,6 +41,55 @@ img {
   display: block;
 }
 
+/* כל תמונה נכנסת ברכות — במקום "לקפוץ" כשה-blob נטען */
+.day-cover,
+.gallery-item img,
+.project-cover img,
+.scanning-thumb,
+.stack-grid-item img,
+.album-slot img {
+  animation: img-fade-in 0.35s var(--ease) both;
+}
+
+@keyframes img-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* פס גלילה מעודן בצבעי הערכה */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-strong) transparent;
+}
+
+*::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+*::-webkit-scrollbar-thumb {
+  background: var(--border-strong);
+  border-radius: var(--radius-full);
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background: var(--text-faint);
+}
+
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+/* צבע סימון טקסט תואם מותג */
+::selection {
+  background: var(--accent-soft);
+  color: var(--text);
+}
+
 /* ===== Shared components ===== */
 
 .btn-primary {
@@ -101,6 +150,9 @@ img {
   bottom: var(--space-3);
   inset-inline-start: var(--space-3);
   z-index: 80;
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
   padding: var(--space-2) var(--space-4);
   border-radius: var(--radius-full);
   background: var(--bg-card);
@@ -112,6 +164,28 @@ img {
   font-variant-numeric: tabular-nums;
   pointer-events: none;
   animation: fade-in var(--dur-med) var(--ease) both;
+}
+
+/* נקודה נושמת בצ'יפ הניתוח — "אני חי ועובד" */
+.analysis-chip::before {
+  content: '';
+  width: 8px;
+  height: 8px;
+  border-radius: var(--radius-full);
+  background: var(--accent);
+  animation: chip-pulse 1.4s ease-in-out infinite;
+}
+
+@keyframes chip-pulse {
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.45;
+    transform: scale(0.75);
+  }
 }
 
 /* כפתור X לסגירת חלוניות */

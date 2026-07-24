@@ -903,6 +903,19 @@
 
 .swipe-complete-emoji {
   font-size: 3rem;
+  animation: emoji-bounce 0.7s var(--ease) 0.15s both;
+}
+
+@keyframes emoji-bounce {
+  0% {
+    transform: scale(0) rotate(-15deg);
+  }
+  60% {
+    transform: scale(1.25) rotate(6deg);
+  }
+  100% {
+    transform: scale(1) rotate(0);
+  }
 }
 
 .swipe-complete-title {

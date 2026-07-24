@@ -9,6 +9,26 @@
     var(--bg);
 }
 
+/* הזוהר "נושם" לאט — המסך מרגיש חי בלי להסיח */
+.welcome::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(50% 40% at 50% 10%, var(--accent-glow) 0%, transparent 70%);
+  animation: glow-breathe 6s ease-in-out infinite;
+  pointer-events: none;
+}
+
+@keyframes glow-breathe {
+  0%,
+  100% {
+    opacity: 0;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
 .welcome-topbar {
   position: absolute;
   top: var(--space-4);
@@ -16,6 +36,8 @@
 }
 
 .welcome-content {
+  position: relative;
+  z-index: 1;
   max-width: 480px;
   display: flex;
   flex-direction: column;
