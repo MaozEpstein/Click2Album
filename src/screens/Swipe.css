@@ -738,6 +738,25 @@
   border-color: var(--success);
 }
 
+/* התמונה שנלחצה בגלריה — מסגרת מותג זוהרת, אי-אפשר לפספס */
+.stack-grid-item-focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-soft), 0 8px 28px var(--accent-glow);
+}
+
+.stack-focus-label {
+  position: absolute;
+  top: var(--space-2);
+  inset-inline-start: var(--space-2);
+  padding: 3px 12px;
+  border-radius: var(--radius-full);
+  font-size: var(--fs-tiny);
+  font-weight: 800;
+  color: #fff;
+  background: var(--gradient-brand);
+  box-shadow: var(--shadow-accent);
+}
+
 .stack-recommended {
   position: absolute;
   top: var(--space-2);

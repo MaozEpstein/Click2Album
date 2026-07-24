@@ -62,6 +62,37 @@ function StackGridItem({
   );
 }
 
+/** תמונה במסך השוואת קבוצה מהגלריה — צפייה בלבד, עם סימון התמונה שנבחרה */
+function CompareGridItem({
+  photo,
+  focus,
+  recommended,
+  onOpen,
+}: {
+  photo: PhotoRecord;
+  focus: boolean;
+  recommended: boolean;
+  onOpen: () => void;
+}) {
+  const t = useT();
+  const url = useObjectUrl(photo.preview);
+  return (
+    <button
+      className={`stack-grid-item${focus ? ' stack-grid-item-focus' : ''}`}
+      onClick={onOpen}
+    >
+      {url && <img src={url} alt={photo.name} loading="lazy" />}
+      {focus && <span className="stack-focus-label">{t.compareSelected}</span>}
+      {recommended && !focus && <span className="stack-recommended">{t.recommended}</span>}
+      {photo.decision && (
+        <span className={`gallery-badge gallery-badge-${photo.decision}`}>
+          {photo.decision === 'keep' ? '✓' : photo.decision === 'favorite' ? '★' : '✕'}
+        </span>
+      )}
+    </button>
+  );
+}
+
 const galleryTimeFormatter = new Intl.DateTimeFormat('he-IL', {
   day: '2-digit',
   month: '2-digit',
@@ -465,6 +496,10 @@ export function Swipe({ day, budgetTarget, onBack }: SwipeProps) {
 
   const [selectMode, setSelectMode] = useState(false);
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
+  // השוואת קבוצה מהגלריה — הערימה שנפתחה + התמונה שנלחצה
+  const [compareStack, setCompareStack] = useState<{ stack: PhotoStack; focusId: string } | null>(
+    null,
+  );
   const [selectedGalleryIds, setSelectedGalleryIds] = useState<Set<string>>(new Set());
 
   /** החלטה ישירה מהגלריה — שמירה מיידית */
@@ -605,7 +640,13 @@ export function Swipe({ day, budgetTarget, onBack }: SwipeProps) {
           >
             {selectMode ? t.gallerySelectExit : t.gallerySelectMode}
           </button>
-          <button className="btn-ghost" onClick={() => setGalleryOpen(false)}>
+          <button
+            className="btn-ghost"
+            onClick={() => {
+              setCompareStack(null);
+              setGalleryOpen(false);
+            }}
+          >
             {t.back}
           </button>
         </div>
@@ -633,11 +674,58 @@ export function Swipe({ day, budgetTarget, onBack }: SwipeProps) {
             selectMode={selectMode}
             selected={selectedGalleryIds.has(photo.id)}
             onToggleSelect={() => toggleGallerySelect(photo.id)}
-            onOpen={() => withViewTransition(() => setLightboxIndex(i))}
+            onOpen={() => {
+              // תמונה מקבוצה — פותחים השוואה עם סימון; אחרת לייטבוקס רגיל
+              const stack = galleryStackInfo.has(photo.id)
+                ? allStacks.find((s) => s.photos.some((p) => p.id === photo.id))
+                : undefined;
+              if (stack && stack.photos.length > 1) {
+                withViewTransition(() => setCompareStack({ stack, focusId: photo.id }));
+              } else {
+                withViewTransition(() => setLightboxIndex(i));
+              }
+            }}
             onDecide={(decision) => decideGallery(photo, decision)}
           />
         ))}
       </div>
+
+      {compareStack && (() => {
+        const photos = [...compareStack.stack.photos].sort(
+          (a, b) => (b.bestShotScore ?? -1) - (a.bestShotScore ?? -1),
+        );
+        const cols = photos.length <= 4 ? 2 : photos.length <= 9 ? 3 : 4;
+        return (
+          <div className="stack-overlay">
+            <p className="stack-overlay-hint">{t.compareHint}</p>
+            <div
+              className={`stack-grid${photos.length > cols * 2 ? ' stack-grid-scroll' : ''}`}
+              style={{ '--cols': cols } as React.CSSProperties}
+            >
+              {photos.map((photo) => (
+                <CompareGridItem
+                  key={photo.id}
+                  photo={photo}
+                  focus={photo.id === compareStack.focusId}
+                  recommended={photo.id === compareStack.stack.cover.id}
+                  onOpen={() => {
+                    const gi = galleryPhotos.findIndex((p) => p.id === photo.id);
+                    if (gi >= 0) {
+                      setCompareStack(null);
+                      setLightboxIndex(gi);
+                    }
+                  }}
+                />
+              ))}
+            </div>
+            <div className="stack-overlay-actions">
+              <button className="btn-ghost" onClick={() => setCompareStack(null)}>
+                {t.back}
+              </button>
+            </div>
+          </div>
+        );
+      })()}
 
       {lightboxIndex !== null && galleryPhotos.length > 0 && (() => {
         const idx = Math.min(lightboxIndex, galleryPhotos.length - 1);

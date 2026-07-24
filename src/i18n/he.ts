@@ -78,6 +78,8 @@ export const he = {
   stackHint: 'צילומי רצף דומים — סווייפ בוחר את המוצגת',
   stackConfirm: (selected: number, total: number) => `אישור (${selected} מתוך ${total})`,
   stackCancel: 'ביטול',
+  compareHint: 'כל תמונות הקבוצה — לחיצה על תמונה מגדילה אותה',
+  compareSelected: 'התמונה שבחרת',
 
   dayCompleteTitle: 'סיימת את היום! 🎉',
   categoryCompleteTitle: (name: string) => `סיימת את קטגוריית "${name}"! 🎉`,
